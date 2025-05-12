@@ -4,7 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.request.PostCreate;
+import org.juniortown.backend.service.PostService;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,25 +15,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RestController()
+@RestController
+@RequiredArgsConstructor
 public class PostController {
+	private final PostService postService;
 	@PostMapping("/posts")
-	public Map<String,String> post(@RequestBody @Valid PostCreate param) {
-		/*if(result.hasErrors()){
-			List<FieldError> fieldErrors = result.getFieldErrors();
-			FieldError firstFieldError = fieldErrors.get(0);
-			String fieldName = firstFieldError.getField();
-			String errorMessage = firstFieldError.getDefaultMessage();
-
-			Map<String, String> error = new HashMap<>();
-			error.put(fieldName, errorMessage);
-			return error;
-		}*/
-
-		return Map.of();
+	public void post(@RequestBody @Valid PostCreate request) {
+		// Case1. 저장한 데이터 Entity -> response로 응답하기
+		// Case2. 저장한 데이터의 primary_id -> response로 응답하기
+		postService.write(request);
 	}
 
 }

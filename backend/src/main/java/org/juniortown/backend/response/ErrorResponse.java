@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -18,22 +19,19 @@ import lombok.RequiredArgsConstructor;
  * }
  */
 @Getter
-@RequiredArgsConstructor
 public class ErrorResponse {
 	private final String code;
 	private final String message;
 
 	private Map<String, String> validation = new HashMap<>();
+	@Builder
+	public ErrorResponse(String code, String message) {
+		this.code = code;
+		this.message = message;
+	}
 
 	public void addValidation(String fieldName, String errorMessage) {
 		//ValidationTuple tuple = new ValidationTuple(fieldName, message);
 		this.validation.put(fieldName, errorMessage);
 	}
-	@RequiredArgsConstructor
-	@Getter
-	private class ValidationTuple {
-		private final String fieldName;
-		private final String errorMessage;
-	}
-
 }
