@@ -6,7 +6,10 @@ import java.util.Map;
 
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.request.PostCreate;
+import org.juniortown.backend.response.PostResponse;
 import org.juniortown.backend.service.PostService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,9 +37,15 @@ public class PostController {
 
 	// 단건 조회
 	@GetMapping("/posts/{postId}")
-	public Post get(@PathVariable(name = "postId") Long id) {
-		Post post = postService.get(id);
-		return post;
+	public PostResponse get(@PathVariable(name = "postId") Long id) {
+		PostResponse response = postService.get(id);
+		return response;
+	}
+
+	// 여러건 조회
+	@GetMapping("/posts")
+	public List<PostResponse> getList(Pageable pageable) {
+		return postService.getList(pageable);
 	}
 
 }

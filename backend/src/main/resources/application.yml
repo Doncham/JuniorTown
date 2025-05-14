@@ -4,7 +4,11 @@ spring:
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
+        default-page-size: 5
   jpa:
     show-sql: true
     hibernate:

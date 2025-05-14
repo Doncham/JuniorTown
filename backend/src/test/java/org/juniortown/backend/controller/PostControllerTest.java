@@ -1,10 +1,16 @@
 package org.juniortown.backend.controller;
 
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.hamcrest.Matchers;
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.repository.PostRepository;
 import org.juniortown.backend.request.PostCreate;
@@ -115,7 +121,7 @@ class PostControllerTest {
 	void test4() throws Exception {
 		// given
 		Post post = Post.builder()
-			.title("foo")
+			.title("123456789012345")
 			.content("bar")
 			.build();
 		postRepository.save(post);
@@ -126,8 +132,37 @@ class PostControllerTest {
 			)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(post.getId()))
-			.andExpect(jsonPath("$.title").value(post.getTitle()))
+			.andExpect(jsonPath("$.title").value("1234567890"))
 			.andExpect(jsonPath("$.content").value(post.getContent()))
+			.andDo(print());
+
+
+	}
+	@Test
+	@DisplayName("글 여러개 조회")
+	void test5() throws Exception {
+		// given
+		List<Post> requestPosts = IntStream.range(1, 31)
+			.mapToObj(i -> {
+				return Post.builder()
+					.title("호돌맨 제목 " + i)
+					.content("반포자이 " + i)
+					.build();
+			})
+			.collect(Collectors.toList());
+
+		postRepository.saveAll(requestPosts);
+
+		// when + then -> expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/posts?page=1&sort=id,desc")
+				.contentType(APPLICATION_JSON)
+			)
+			.andExpect(jsonPath("$.length()", is(5)))
+			.andExpect(jsonPath("$[0].id", is(30)))
+			.andExpect(jsonPath("$[0].title", is("호돌맨 제목 30")))
+			.andExpect(jsonPath("$[0].content", is("반포자이 30")))
+
+			.andExpect(status().isOk())
 			.andDo(print());
 
 		// then
