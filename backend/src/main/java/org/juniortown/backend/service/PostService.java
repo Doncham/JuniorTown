@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.repository.PostRepository;
 import org.juniortown.backend.request.PostCreate;
+import org.juniortown.backend.request.PostSearch;
 import org.juniortown.backend.response.PostResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,8 +42,8 @@ public class PostService {
 		return response;
 	}
 
-	public List<PostResponse> getList(Pageable pageable) {
-		return postRepository.findAll(pageable).stream()
+	public List<PostResponse> getList(PostSearch postSearch) {
+		return postRepository.getList(postSearch).stream()
 			.map(post -> new PostResponse(post))
 			.collect(Collectors.toList());
 	}

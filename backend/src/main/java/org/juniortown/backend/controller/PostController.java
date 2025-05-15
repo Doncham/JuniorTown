@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.request.PostCreate;
+import org.juniortown.backend.request.PostSearch;
 import org.juniortown.backend.response.PostResponse;
 import org.juniortown.backend.service.PostService;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,8 +46,8 @@ public class PostController {
 
 	// 여러건 조회
 	@GetMapping("/posts")
-	public List<PostResponse> getList(Pageable pageable) {
-		return postService.getList(pageable);
+	public List<PostResponse> getList(@ModelAttribute PostSearch postSearch) {
+		return postService.getList(postSearch);
 	}
 
 }
