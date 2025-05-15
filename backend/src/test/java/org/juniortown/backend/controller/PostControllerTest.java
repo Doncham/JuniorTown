@@ -3,6 +3,7 @@ package org.juniortown.backend.controller;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
+import static org.springframework.mock.http.server.reactive.MockServerHttpRequest.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -14,15 +15,16 @@ import org.hamcrest.Matchers;
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.repository.PostRepository;
 import org.juniortown.backend.request.PostCreate;
+import org.juniortown.backend.request.PostEdit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
+
 import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -166,6 +168,51 @@ class PostControllerTest {
 			.andDo(print());
 
 		// then
+	}
+
+	@Test
+	@DisplayName("글 제목 수정")
+	void test6() throws Exception {
+		// given
+		Post post = Post.builder()
+			.title("호돌맨")
+			.content("반포자이")
+			.build();
+
+		postRepository.save(post);
+
+		PostEdit postEdit = PostEdit.builder()
+			.title("호돌걸")
+			.content("반포자이")
+			.build();
+
+		// when + then -> expected
+		mockMvc.perform(MockMvcRequestBuilders.patch("/posts/{postId}", post.getId())
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(postEdit))
+			)
+			.andExpect(status().isOk())
+			.andDo(print());
+
+
+	}
+
+	@Test
+	@DisplayName("게시글 삭제")
+	void test8() throws Exception {
+		// given
+		Post post = Post.builder()
+			.title("호돌맨")
+			.content("반포자이")
+			.build();
+
+		postRepository.save(post);
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.delete("/posts/{postId}", post.getId())
+				.contentType(APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andDo(print());
 	}
 
 }

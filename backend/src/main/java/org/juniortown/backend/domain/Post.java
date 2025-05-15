@@ -26,4 +26,11 @@ public class Post {
 		this.title = title;
 		this.content = content;
 	}
+
+	public void edit(String title, String content) {
+		this.title = title == null ? this.title : title;
+		this.content = content == null ? this.content : content;
+	}
+
+
 }
