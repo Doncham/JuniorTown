@@ -2,8 +2,13 @@ package org.juniortown.backend.controller;
 
 
 
+import java.util.HashMap;
+
+import org.juniortown.backend.exception.CustomException;
+import org.juniortown.backend.exception.PostNotFound;
 import org.juniortown.backend.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -22,17 +27,35 @@ public class ExceptionController {
 	@ResponseBody
 	public ErrorResponse invalidRequestHandler(MethodArgumentNotValidException e) {
 
-			// FieldError fieldError = e.getFieldError();
-			// String field = fieldError.getField();
-			// String message = fieldError.getDefaultMessage();
+		// FieldError fieldError = e.getFieldError();
+		// String field = fieldError.getField();
+		// String message = fieldError.getDefaultMessage();
 		ErrorResponse response = ErrorResponse.builder()
 			.code("400")
 			.message("잘못된 요청입니다.")
+			.validation(new HashMap<>())
 			.build();
 
 		for (FieldError fieldError : e.getFieldErrors()) {
 			response.addValidation(fieldError.getField(), fieldError.getDefaultMessage());
 		}
+
+		return response;
+	}
+
+	@ResponseBody
+	//@ResponseStatus(HttpStatus.NOT_FOUND)
+	@ExceptionHandler(CustomException.class)
+	public ResponseEntity<ErrorResponse> customException(CustomException e) {
+		int statusCode = e.getStatusCode();
+		ErrorResponse body = ErrorResponse.builder()
+			.code(String.valueOf(statusCode))
+			.message(e.getMessage())
+			.validation(e.getValidation())
+			.build();
+
+		ResponseEntity<ErrorResponse> response = ResponseEntity.status(statusCode)
+			.body(body);
 
 		return response;
 	}

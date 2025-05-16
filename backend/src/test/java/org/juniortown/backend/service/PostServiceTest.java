@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.juniortown.backend.domain.Post;
+import org.juniortown.backend.exception.PostNotFound;
 import org.juniortown.backend.repository.PostRepository;
 import org.juniortown.backend.request.PostCreate;
 import org.juniortown.backend.request.PostEdit;
@@ -176,6 +177,63 @@ class PostServiceTest {
 		assertEquals(0, postRepository.count());
 	}
 
+	@Test
+	@DisplayName("글 1개 조회")
+	void test7() {
+		// given
+		Post post = Post.builder()
+			.title("호돌맨")
+			.content("반포자이")
+			.build();
+		postRepository.save(post);
+
+		// expected
+		assertThrows(PostNotFound.class, () -> {
+			postService.get(post.getId() + 1L);
+		});
+
+	}
+	@Test
+	@DisplayName("게시글 삭제 - 존재하지 않는 글")
+	void test8() {
+		// given
+		Post post = Post.builder()
+			.title("호돌맨")
+			.content("반포자이")
+			.build();
+
+		postRepository.save(post);
+
+		// when
+		// expected
+		assertThrows(PostNotFound.class, () -> {
+			postService.delete(post.getId() + 1L);
+		});
+	}
+	@Test
+	@DisplayName("글 내용 수정 - 존재하지 않는 글")
+	void test9() {
+		// given
+		Post post = Post.builder()
+			.title("호돌맨")
+			.content("반포자이")
+			.build();
+
+		postRepository.save(post);
+
+		PostEdit postEdit = PostEdit.builder()
+			.title(null)
+			.content("초가집")
+			.build();
+
+		// expected
+		assertThrows(PostNotFound.class, () -> {
+			postService.edit(post.getId() + 1L, postEdit);
+		});
+
+
+
+	}
 
 
 }

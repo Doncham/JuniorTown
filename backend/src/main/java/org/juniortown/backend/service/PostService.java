@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.juniortown.backend.domain.Post;
 import org.juniortown.backend.domain.PostEditor;
+import org.juniortown.backend.exception.PostNotFound;
 import org.juniortown.backend.repository.PostRepository;
 import org.juniortown.backend.request.PostCreate;
 import org.juniortown.backend.request.PostEdit;
@@ -35,7 +36,7 @@ public class PostService {
 	}
 	public PostResponse get(Long id) {
 		Post post = postRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다."));
+			.orElseThrow(() -> new PostNotFound());
 
 		PostResponse response = PostResponse.builder()
 			.id(post.getId())
@@ -53,7 +54,7 @@ public class PostService {
 	@Transactional
 	public void edit(Long id, PostEdit postEdit) {
 		Post post = postRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다."));
+			.orElseThrow(PostNotFound::new);
 
 		//post.change(postEdit.getTitle(), postEdit.getContent());
 
@@ -70,7 +71,7 @@ public class PostService {
 
 	public void delete(Long id) {
 		Post post = postRepository.findById(id)
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 글입니다"));
+			.orElseThrow(PostNotFound::new);
 
 		postRepository.delete(post);
 

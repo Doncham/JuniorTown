@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.juniortown.backend.domain.Post;
+import org.juniortown.backend.exception.InvalidRequest;
 import org.juniortown.backend.request.PostCreate;
 import org.juniortown.backend.request.PostEdit;
 import org.juniortown.backend.request.PostSearch;
@@ -38,6 +39,7 @@ public class PostController {
 	public void post(@RequestBody @Valid PostCreate request) {
 		// Case1. 저장한 데이터 Entity -> response로 응답하기
 		// Case2. 저장한 데이터의 primary_id -> response로 응답하기
+		request.validate();
 		postService.write(request);
 	}
 
