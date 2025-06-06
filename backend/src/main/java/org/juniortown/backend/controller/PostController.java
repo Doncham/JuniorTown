@@ -1,20 +1,13 @@
 package org.juniortown.backend.controller;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.juniortown.backend.domain.Post;
-import org.juniortown.backend.exception.InvalidRequest;
+import org.juniortown.backend.config.data.UserSession;
 import org.juniortown.backend.request.PostCreate;
 import org.juniortown.backend.request.PostEdit;
 import org.juniortown.backend.request.PostSearch;
 import org.juniortown.backend.response.PostResponse;
 import org.juniortown.backend.service.PostService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,7 +15,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -34,6 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PostController {
 	private final PostService postService;
+
+	@GetMapping("/foo")
+	public String foo(UserSession useSession) {
+		return useSession.id + "";
+	}
 
 	@PostMapping("/posts")
 	public void post(@RequestBody @Valid PostCreate request) {

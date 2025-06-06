@@ -9,6 +9,9 @@ spring:
       pageable:
         one-indexed-parameters: true
         default-page-size: 5
+  sql:
+    init:
+      mode: always
   jpa:
     show-sql: true
     hibernate:
@@ -17,3 +20,4 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+    defer-datasource-initialization: true
