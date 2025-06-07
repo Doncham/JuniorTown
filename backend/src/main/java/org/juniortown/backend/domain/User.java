@@ -27,16 +27,7 @@ public class User {
 	private String email;
 	private String password;
 	private LocalDateTime createdAt;
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
-	private List<Session> sessions = new ArrayList<>();
 
-	public Session addSession() {
-		Session session = Session.builder()
-			.user(this)
-			.build();
-		sessions.add(session);
-		return session;
-	}
 	@Builder
 	public User(String name, String email, String password) {
 		this.name = name;

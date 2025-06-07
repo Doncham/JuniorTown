@@ -2,7 +2,6 @@ package org.juniortown.backend.controller;
 
 import java.util.List;
 
-import org.juniortown.backend.config.data.UserSession;
 import org.juniortown.backend.request.PostCreate;
 import org.juniortown.backend.request.PostEdit;
 import org.juniortown.backend.request.PostSearch;
@@ -26,11 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PostController {
 	private final PostService postService;
-
-	@GetMapping("/foo")
-	public String foo(UserSession useSession) {
-		return useSession.id + "";
-	}
 
 	@PostMapping("/posts")
 	public void post(@RequestBody @Valid PostCreate request) {
