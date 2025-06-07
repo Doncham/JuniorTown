@@ -11,9 +11,9 @@ const App = () => {
 
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/post/add" element={<PostCreatePage />} />
-      <Route path="/post/edit/:id" element={<PostEditPage />} />
-      <Route path="/post/:id" element={<PostDetailsPage />} />
+      <Route path="/posts/add" element={<PostCreatePage />} />
+      <Route path="/posts/edit/:id" element={<PostEditPage />} />
+      <Route path="/posts/:id" element={<PostDetailsPage />} />
       <Route path="/posts" element={<PostListPage />} />
       <Route path="*" element={<Error />} />
     </Routes>

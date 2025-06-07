@@ -11,6 +11,7 @@ import org.juniortown.backend.domain.User;
 import org.juniortown.backend.repository.SessionRepository;
 import org.juniortown.backend.repository.UserRepository;
 import org.juniortown.backend.request.Login;
+import org.juniortown.backend.request.Signup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -159,6 +160,24 @@ class AuthControllerTest {
 				.header("Authorization", session.getAccessToken() +"-o")
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isUnauthorized())
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("회원가입")
+	void test6() throws Exception {
+		// given
+		Signup signup = Signup.builder()
+			.email("test@gmail.com")
+			.password("3333")
+			.name("curry")
+			.build();
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.post("/auth/signup")
+				.content(objectMapper.writeValueAsString(signup))
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
 			.andDo(print());
 	}
 }

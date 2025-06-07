@@ -33,7 +33,7 @@ const PostListPage = () => {
 
   // 3. 각 게시물을 클릭하면 상세 페이지로 이동
   const handleRowClick = (id) => {
-    navigate(`/post/${id}`);
+    navigate(`/posts/${id}`);
   };
 
   return (
@@ -94,7 +94,7 @@ const PostListPage = () => {
 
       {/* 7. 새 게시물 작성 버튼 */}
       <div className="text-end mt-4">
-        <Button variant="success" onClick={() => navigate('/post/add')}>
+        <Button variant="success" onClick={() => navigate('/posts/add')}>
           새 게시물 작성
         </Button>
       </div>
