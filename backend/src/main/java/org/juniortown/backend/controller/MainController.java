@@ -12,6 +12,7 @@ public class MainController {
 
 	@GetMapping("/botWorking")
 	public String bot() {
+		System.out.println("key 재설정");
 		return "bot are working";
 	}
 }
