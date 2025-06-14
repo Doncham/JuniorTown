@@ -22,6 +22,7 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
     defer-datasource-initialization: true
 
-Stephen:
-  Curry: "3-Point"
-  jwt-key: "9SoxxSpqX10Jx6ttGQSwmSwBDdcs07pFpr2WDv2KKtQ="
+  jwt:
+    secret: ${JWT_SECRET_KEY}
+
+

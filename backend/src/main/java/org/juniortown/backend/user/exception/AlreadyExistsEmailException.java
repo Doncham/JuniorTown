@@ -1,6 +1,8 @@
-package org.juniortown.backend.exception;
+package org.juniortown.backend.user.exception;
 
-public class AlreadyExistsEmailException extends CustomException{
+import org.juniortown.backend.exception.CustomException;
+
+public class AlreadyExistsEmailException extends CustomException {
 	public static String MESSAGE = "이미 가입된 이메일입니다.";
 	public AlreadyExistsEmailException() {
 		super(MESSAGE);

@@ -3,13 +3,9 @@ package org.juniortown.backend.controller;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.hamcrest.Matchers;
-import org.juniortown.backend.domain.User;
-import org.juniortown.backend.repository.UserRepository;
-import org.juniortown.backend.request.Signup;
+import org.juniortown.backend.user.repository.UserRepository;
+import org.juniortown.backend.user.request.SignUpDTO;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +38,7 @@ class AuthControllerTest {
 	@Transactional
 	void test6() throws Exception {
 		// given
-		Signup signup = Signup.builder()
+		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("3333")
 			.name("curry")
@@ -50,7 +46,7 @@ class AuthControllerTest {
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.post("/auth/signup")
-				.content(objectMapper.writeValueAsString(signup))
+				.content(objectMapper.writeValueAsString(signUpDTO))
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andDo(print());

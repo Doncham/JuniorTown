@@ -2,12 +2,11 @@ package org.juniortown.backend.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.juniortown.backend.crypto.PasswordEncoder;
-import org.juniortown.backend.domain.User;
-import org.juniortown.backend.exception.AlreadyExistsEmailException;
-import org.juniortown.backend.exception.InvalidSignInformation;
-import org.juniortown.backend.repository.UserRepository;
-import org.juniortown.backend.request.Signup;
+import org.juniortown.backend.user.entity.User;
+import org.juniortown.backend.user.exception.AlreadyExistsEmailException;
+import org.juniortown.backend.user.repository.UserRepository;
+import org.juniortown.backend.user.request.SignUpDTO;
+import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,14 +32,14 @@ class AuthServiceTest {
 	@Transactional
 	void test1() {
 		// given
-		Signup signup = Signup.builder()
+		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("3333")
 			.name("curry")
 			.build();
 
 		// when
-		authService.signUp(signup);
+		authService.signUp(signUpDTO);
 
 		// then
 		assertEquals(1, userRepository.count());
@@ -62,7 +61,7 @@ class AuthServiceTest {
 			.build();
 		userRepository.save(dupUser);
 
-		Signup signup = Signup.builder()
+		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("3333")
 			.name("curry")
@@ -70,6 +69,6 @@ class AuthServiceTest {
 
 		// expect
 		assertThrows(AlreadyExistsEmailException.class,
-			() -> authService.signUp(signup));
+			() -> authService.signUp(signUpDTO));
 	}
 }
