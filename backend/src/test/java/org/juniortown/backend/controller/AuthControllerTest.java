@@ -176,31 +176,6 @@ class AuthControllerTest {
 			.andDo(print());
 	}
 
-	@Test
-	@DisplayName("이미 존재하는 이메일로 회원가입 시도 시 실패")
-	void sign_up_email_should_be_unique() {
-		// given
-		SignUpDTO signUpDTO = SignUpDTO.builder()
-			.email("init@gmail.com")
-			.password("password")
-			.name("init")
-			.build();
-
-		// expected
-		try {
-			mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/signup")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content(objectMapper.writeValueAsString(signUpDTO)))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("이미 가입된 이메일입니다."))
-				.andDo(print());
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-	}
 
 	@Test
 	@DisplayName("로그인 성공 시 Authorization 헤더에 JWT 토큰이 포함되어야 함")
@@ -232,6 +207,7 @@ class AuthControllerTest {
 	}
 
 	@Test
+	@DisplayName("로그인 실패 - 잘못된 유저 정보를 통한 로그인의 경우")
 	void login_failure_with_wrong_password() throws Exception {
 		// given
 		LoginDTO loginDTO = LoginDTO.builder()

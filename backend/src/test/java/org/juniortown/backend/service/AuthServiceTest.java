@@ -1,27 +1,45 @@
 package org.juniortown.backend.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import org.assertj.core.api.Assertions;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.AlreadyExistsEmailException;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 class AuthServiceTest {
-	@Autowired
+	@Mock
 	private UserRepository userRepository;
-	@Autowired
+	@Mock
+	private BCryptPasswordEncoder encoder;
+	@InjectMocks
 	private AuthService authService;
+	private SignUpDTO dto;
+
+	@BeforeEach
+	void setUp() {
+		dto = SignUpDTO.builder()
+			.name("testUser")
+			.email("test@eaxample.com")
+			.password("password123")
+			.build();
+	}
+
 	@AfterEach
 	void clear() {
 		userRepository.deleteAll();
@@ -29,46 +47,36 @@ class AuthServiceTest {
 
 	@Test
 	@DisplayName("회원가입 성공")
-	@Transactional
-	void test1() {
+	void signup_success_whenEmailNotExists() {
 		// given
-		SignUpDTO signUpDTO = SignUpDTO.builder()
-			.email("test@gmail.com")
-			.password("3333")
-			.name("curry")
-			.build();
+		when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
+		when(encoder.encode(dto.getPassword())).thenReturn("encodedPwd123");
 
 		// when
-		authService.signUp(signUpDTO);
+		authService.signUp(dto);
 
 		// then
-		assertEquals(1, userRepository.count());
+		ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+		verify(userRepository).save(captor.capture());
+		User saved = captor.getValue();
+		Assertions.assertThat(saved.getName()).isEqualTo(dto.getName());
+		Assertions.assertThat(saved.getEmail()).isEqualTo(dto.getEmail());
+		Assertions.assertThat(saved.getPassword()).isEqualTo("encodedPwd123");
 
-		User user = userRepository.findAll().iterator().next();
-		assertEquals("test@gmail.com", user.getEmail());
-		assertNotNull(user.getPassword());
-		assertEquals("curry", user.getName());
 	}
 
 	@Test
-	@DisplayName("회원가입 시 중복된 이메일")
-	void test2() {
+	@DisplayName("이미 존재하는 이메일의 경우 에외 발생")
+	void signup_fail_whenEmailExists() {
 		// given
-		User dupUser = User.builder()
-			.email("test@gmail.com")
-			.password("1234")
-			.name("짱똘맨")
-			.build();
-		userRepository.save(dupUser);
+		when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
 
-		SignUpDTO signUpDTO = SignUpDTO.builder()
-			.email("test@gmail.com")
-			.password("3333")
-			.name("curry")
-			.build();
+		// when, then
+		Assertions.assertThatThrownBy(() -> authService.signUp(dto))
+			.isInstanceOf(AlreadyExistsEmailException.class)
+			.hasMessage("이미 가입된 이메일입니다.");
 
-		// expect
-		assertThrows(AlreadyExistsEmailException.class,
-			() -> authService.signUp(signUpDTO));
+		verify(userRepository, never()).save(any());
+
 	}
 }
