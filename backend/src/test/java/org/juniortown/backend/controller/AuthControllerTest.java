@@ -4,9 +4,15 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.juniortown.backend.user.dto.LoginDTO;
+import org.juniortown.backend.user.entity.User;
+import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
+import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +22,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -30,16 +38,30 @@ class AuthControllerTest {
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
+	private AuthService authService;
+	@Autowired
 	private ObjectMapper objectMapper;
+	@Autowired
+	private JWTUtil jwtUtil;
 
 	@AfterEach
 	void clean() {
 		userRepository.deleteAll();
 	}
 
+	@BeforeEach
+	public void init() {
+		SignUpDTO signUpDTO = SignUpDTO.builder()
+			.email("init@gmail.com")
+			.password("3333")
+			.name("init")
+			.build();
+		authService.signUp(signUpDTO);
+	}
+
 	@Test
 	@DisplayName("회원가입")
-	void signupTest() throws Exception {
+	void signup_test() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
@@ -57,7 +79,7 @@ class AuthControllerTest {
 
 	@Test
 	@DisplayName("이메일 형식이 아닌 경우 회원가입 실패")
-	void emailValidationTest() throws Exception {
+	void email_validation_test() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("testgmail.com") // 이메일 형식이 잘못됨
@@ -76,7 +98,7 @@ class AuthControllerTest {
 
 	@Test
 	@DisplayName("비밀번호는 빈칸이 아니어야 함")
-	void passwordNotEmptyValidationTest() throws Exception {
+	void password_not_empty_validation_test() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
@@ -95,7 +117,7 @@ class AuthControllerTest {
 
 	@Test
 	@DisplayName("이름은 빈칸이 아니어야 함")
-	void nameNotEmptyValidationTest() throws Exception {
+	void name_not_empty_validation_test() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
@@ -118,7 +140,7 @@ class AuthControllerTest {
 
 	@Test
 	@DisplayName("이름은 2자 이상 20자 이하로 입력해야 함")
-	void nameSizeBiggerThan2() throws Exception {
+	void name_size_bigger_than() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
@@ -137,7 +159,7 @@ class AuthControllerTest {
 
 	@Test
 	@DisplayName("이름은 2자 이상 20자 이하로 입력해야 함")
-	void nameSizeSmallerThan20() throws Exception {
+	void name_size_smaller_than20() throws Exception {
 		// given
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
@@ -152,5 +174,79 @@ class AuthControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.validation.name").value("이름은 2자 이상 20자 이하로 입력해주세요."))
 			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("이미 존재하는 이메일로 회원가입 시도 시 실패")
+	void sign_up_email_should_be_unique() {
+		// given
+		SignUpDTO signUpDTO = SignUpDTO.builder()
+			.email("init@gmail.com")
+			.password("password")
+			.name("init")
+			.build();
+
+		// expected
+		try {
+			mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/signup")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(signUpDTO)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message").value("이미 가입된 이메일입니다."))
+				.andDo(print());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+
+	@Test
+	@DisplayName("로그인 성공 시 Authorization 헤더에 JWT 토큰이 포함되어야 함")
+	// 좀 분리해야 할거 같기도 함.
+	void login_success_test() throws Exception {
+		// given
+		LoginDTO loginDTO = LoginDTO.builder()
+			.email("init@gmail.com")
+			.password("3333")
+			.build();
+
+		// expected
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(loginDTO)))
+			.andExpect(status().isOk())
+			.andExpect(header().exists("Authorization"))
+			.andExpect(header().string("Authorization", startsWith("Bearer")))
+			.andExpect(jsonPath("$.message").value("Login successful"))
+			.andDo(print())
+			.andReturn();
+
+		// Authorization 헤더에서 JWT 토큰을 추출하고 검증
+		String Token = mvcResult.getResponse().getHeader("Authorization");
+		String extractedUsername = jwtUtil.getUsername(Token.split(" ")[1]);
+		Assertions.assertEquals("init@gmail.com", extractedUsername);
+		Assertions.assertFalse(jwtUtil.isExpired(Token.split(" ")[1]));
+
+	}
+
+	@Test
+	void login_failure_with_wrong_password() throws Exception {
+		// given
+		LoginDTO loginDTO = LoginDTO.builder()
+			.email("init@gmail.com")
+			.password("WrongPassword")
+			.build();
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.post("/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(loginDTO)))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.message").value("Login failed"))
+			.andDo(print());
+
+
 	}
 }

@@ -23,4 +23,4 @@ spring:
     defer-datasource-initialization: true
 
   jwt:
-    secret: abcdeferasddatestkey
+    secret: abcdeferasddatestkeysadfadsfadfdvdsf
