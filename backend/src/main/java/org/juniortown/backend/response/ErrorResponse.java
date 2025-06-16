@@ -1,6 +1,8 @@
 package org.juniortown.backend.response;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -24,16 +26,15 @@ import lombok.RequiredArgsConstructor;
 public class ErrorResponse {
 	private final String code;
 	private final String message;
-	private Map<String, String> validation;
+	private final Map<String, List<String>> validation = new HashMap<>();
 	@Builder
-	public ErrorResponse(String code, String message, Map<String, String> validation) {
+	public ErrorResponse(String code, String message) {
 		this.code = code;
 		this.message = message;
-		this.validation = validation;
 	}
 
 	public void addValidation(String fieldName, String errorMessage) {
-		//ValidationTuple tuple = new ValidationTuple(fieldName, message);
-		this.validation.put(fieldName, errorMessage);
+		this.validation.computeIfAbsent(fieldName, key -> new ArrayList<>())
+			.add(errorMessage);
 	}
 }

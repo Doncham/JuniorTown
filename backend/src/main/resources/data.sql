@@ -1,2 +1,0 @@
-INSERT INTO `user` (name , email, password, created_at) VALUES ('호돌맨', 'hodol@naver.com', '1234', '2025-11-20');
-INSERT INTO `user` (name , email, password, created_at) VALUES ('호돌맨', 'sangwon@gmail.com', '1234', '2025-11-20');
