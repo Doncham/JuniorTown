@@ -72,11 +72,14 @@ public class SecurityConfig {
 		//경로별 인가 작업
 		http
 			.authorizeHttpRequests((auth) -> auth
-				.requestMatchers("/login", "/", "/api/auth/signup").permitAll()
+				.requestMatchers("api/auth/login", "/", "/api/auth/signup").permitAll()
 				.requestMatchers("/admin").hasRole("ADMIN")
 				.anyRequest().authenticated());
 
-		http.addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+		LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
+		loginFilter.setFilterProcessesUrl("/api/auth/login");
+
+		http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 		http.addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
 
 		//세션 설정

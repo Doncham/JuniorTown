@@ -13,8 +13,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JWTFilter extends OncePerRequestFilter {
 	private final JWTUtil jwtUtil;
 	@Override
@@ -24,7 +26,7 @@ public class JWTFilter extends OncePerRequestFilter {
 		String authorization = request.getHeader("Authorization");
 
 		if (authorization == null || !authorization.startsWith("Bearer ")) {
-			System.out.println("token null");
+			log.warn("requestURI: " + request.getRequestURI() + " message: token null");
 			filterChain.doFilter(request, response);
 			return;
 		}

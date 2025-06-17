@@ -28,7 +28,7 @@ public class AuthService {
 		String encryptedPassword = encoder.encode(signUpDTO.getPassword());
 
 		User user = User.builder()
-			.name(signUpDTO.getName())
+			.name(signUpDTO.getUsername())
 			.password(encryptedPassword)
 			.email(signUpDTO.getEmail())
 			.build();

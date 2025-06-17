@@ -56,4 +56,16 @@ public class ExceptionController {
 
 		return response;
 	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> exceptionHandler(Exception e) {
+		log.error("Exception: ", e);
+		ErrorResponse response = ErrorResponse.builder()
+			.code("500")
+			.message("서버 오류입니다.")
+			.build();
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(response);
+	}
 }
