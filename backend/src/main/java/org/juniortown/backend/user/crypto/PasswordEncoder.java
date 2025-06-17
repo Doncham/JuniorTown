@@ -1,4 +1,4 @@
-package org.juniortown.backend.crypto;
+package org.juniortown.backend.user.crypto;
 
 import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
 

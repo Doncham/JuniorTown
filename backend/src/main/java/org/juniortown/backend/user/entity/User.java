@@ -1,4 +1,4 @@
-package org.juniortown.backend.domain;
+package org.juniortown.backend.user.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,12 +27,14 @@ public class User {
 	private String email;
 	private String password;
 	private LocalDateTime createdAt;
+	private String role;
 
 	@Builder
-	public User(String name, String email, String password) {
+	public User(String name, String email, String password, String role) {
 		this.name = name;
 		this.email = email;
 		this.password = password;
 		this.createdAt = LocalDateTime.now();
+		this.role = role;
 	}
 }
