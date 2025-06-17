@@ -81,7 +81,7 @@ public class SecurityConfig {
 
 		http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 		http.addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
-        
+        		//JWT 필터 설정
 		//세션 설정
 		http
 			.sessionManagement((session) -> session
