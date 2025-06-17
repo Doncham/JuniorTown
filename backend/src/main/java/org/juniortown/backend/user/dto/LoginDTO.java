@@ -17,6 +17,12 @@ public class LoginDTO {
 	@NotBlank(message = "비밀번호를 입력해주세요.")
 	//@Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다.")
 	private String password;
+	/**
+		 * Constructs a LoginDTO with the specified email and password.
+		 *
+		 * @param email the user's email address
+		 * @param password the user's password
+		 */
 	@Builder
 	public LoginDTO(String email, String password) {
 		this.email = email;

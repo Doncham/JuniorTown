@@ -5,5 +5,10 @@ import java.util.List;
 import org.juniortown.backend.user.entity.User;
 
 public interface UserRepositoryCustom {
-	List<User> getUsers();
+	/****
+ * Retrieves a list of all User entities.
+ *
+ * @return a list containing User objects
+ */
+List<User> getUsers();
 }

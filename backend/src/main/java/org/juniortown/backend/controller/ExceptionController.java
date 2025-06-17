@@ -22,6 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice
 public class ExceptionController {
+	/**
+	 * Handles validation errors for method arguments and returns a structured error response.
+	 *
+	 * Returns an error response with HTTP 400 status, including details about each invalid field and its validation message.
+	 *
+	 * @param e the exception containing validation errors for method arguments
+	 * @return an ErrorResponse with code "400", a generic bad request message, and validation error details
+	 */
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ErrorResponse invalidRequestHandler(MethodArgumentNotValidException e) {
@@ -41,7 +49,12 @@ public class ExceptionController {
 		return response;
 	}
 
-	//@ResponseStatus(HttpStatus.NOT_FOUND)
+	/**
+	 * Handles {@link CustomException} by returning a structured error response with the exception's status code and message.
+	 *
+	 * @param e the custom exception to handle
+	 * @return a {@link ResponseEntity} containing the error response and the appropriate HTTP status code
+	 */
 	@ExceptionHandler(CustomException.class)
 	public ResponseEntity<ErrorResponse> customException(CustomException e) {
 		int statusCode = e.getStatusCode();
@@ -57,6 +70,11 @@ public class ExceptionController {
 		return response;
 	}
 
+	/**
+	 * Handles uncaught exceptions and returns a standardized 500 Internal Server Error response.
+	 *
+	 * @return a ResponseEntity containing an ErrorResponse with error code "500" and a generic server error message
+	 */
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> exceptionHandler(Exception e) {
 		log.error("Exception: ", e);

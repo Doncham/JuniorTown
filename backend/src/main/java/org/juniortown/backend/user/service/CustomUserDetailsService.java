@@ -16,6 +16,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 	private final UserRepository userRepository;
+	/**
+	 * Loads user details for authentication based on the provided email address.
+	 *
+	 * @param email the email address of the user to load
+	 * @return a {@link CustomUserDetails} object if a user with the given email exists, or {@code null} if not found
+	 */
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		Optional<User> userData = userRepository.findByEmail(email);

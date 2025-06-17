@@ -2,6 +2,13 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Renders a login page with a form for user authentication.
+ *
+ * Handles user input for email and password, submits credentials to the backend API, processes authentication, and redirects to the home page upon successful login.
+ *
+ * @returns {JSX.Element} The login form component.
+ */
 export function LoginPage() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const navigate = useNavigate();

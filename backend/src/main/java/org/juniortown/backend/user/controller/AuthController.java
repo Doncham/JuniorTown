@@ -20,12 +20,25 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AuthController {
 	private final AuthService authService;
+	/**
+	 * Handles user registration requests.
+	 *
+	 * Accepts a JSON payload containing user sign-up information, processes the registration, and responds with HTTP 201 Created upon success.
+	 *
+	 * @param signUpDTO the user registration data
+	 * @return HTTP 201 Created with no response body if registration is successful
+	 */
 	@PostMapping("/auth/signup")
 	public ResponseEntity<Void> signup(@Valid @RequestBody SignUpDTO signUpDTO) {
 		authService.signUp(signUpDTO);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
+	/**
+	 * Handles a test POST request to verify JWT authentication.
+	 *
+	 * This endpoint can be used to confirm that JWT-based authentication is functioning correctly.
+	 */
 	@PostMapping("/auth/jwt/test")
 	public void test() {
 		log.info("test");

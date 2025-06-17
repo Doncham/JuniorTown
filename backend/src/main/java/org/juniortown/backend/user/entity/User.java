@@ -29,6 +29,14 @@ public class User {
 	private LocalDateTime createdAt;
 	private String role;
 
+	/**
+	 * Constructs a new User with the specified name, email, password, and role, setting the creation time to the current date and time.
+	 *
+	 * @param name the user's name
+	 * @param email the user's email address
+	 * @param password the user's password
+	 * @param role the user's role
+	 */
 	@Builder
 	public User(String name, String email, String password, String role) {
 		this.name = name;
