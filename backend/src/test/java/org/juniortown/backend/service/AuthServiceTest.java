@@ -34,7 +34,7 @@ class AuthServiceTest {
 	@BeforeEach
 	void setUp() {
 		dto = SignUpDTO.builder()
-			.name("testUser")
+			.username("testUser")
 			.email("test@eaxample.com")
 			.password("password123")
 			.build();
@@ -59,7 +59,7 @@ class AuthServiceTest {
 		ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
 		verify(userRepository).save(captor.capture());
 		User saved = captor.getValue();
-		Assertions.assertThat(saved.getName()).isEqualTo(dto.getName());
+		Assertions.assertThat(saved.getName()).isEqualTo(dto.getUsername());
 		Assertions.assertThat(saved.getEmail()).isEqualTo(dto.getEmail());
 		Assertions.assertThat(saved.getPassword()).isEqualTo("encodedPwd123");
 

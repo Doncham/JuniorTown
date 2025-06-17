@@ -24,6 +24,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 			return new CustomUserDetails(userData.get());
 		}
 
-		return null;
+		throw new UsernameNotFoundException("User not found with email: " + email);
 	}
 }

@@ -31,6 +31,7 @@ public class AuthService {
 			.name(signUpDTO.getUsername())
 			.password(encryptedPassword)
 			.email(signUpDTO.getEmail())
+			.role("ROLE_USER")
 			.build();
 
 		userRepository.save(user);

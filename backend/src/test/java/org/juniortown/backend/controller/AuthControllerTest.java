@@ -54,7 +54,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("init@gmail.com")
 			.password("3333")
-			.name("init")
+			.username("init")
 			.build();
 		authService.signUp(signUpDTO);
 	}
@@ -66,7 +66,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("3333")
-			.name("curry")
+			.username("curry")
 			.build();
 
 		// expected
@@ -84,7 +84,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("testgmail.com") // 이메일 형식이 잘못됨
 			.password("3333")
-			.name("curry")
+			.username("curry")
 			.build();
 
 		// expected
@@ -103,7 +103,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("")
-			.name("curry")
+			.username("curry")
 			.build();
 
 		// expected
@@ -122,7 +122,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("password")
-			.name("")
+			.username("")
 			.build();
 
 		// expected
@@ -130,8 +130,8 @@ class AuthControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(signUpDTO)))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.validation.name", hasSize(2)))
-			.andExpect(jsonPath("$.validation.name", hasItems(
+			.andExpect(jsonPath("$.validation.username", hasSize(2)))
+			.andExpect(jsonPath("$.validation.username", hasItems(
 				"이름을 입력해주세요.",
 				"이름은 2자 이상 20자 이하로 입력해주세요."
 			)))
@@ -145,7 +145,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("password")
-			.name("a") // 1자
+			.username("a") // 1자
 			.build();
 
 		// expected
@@ -153,7 +153,7 @@ class AuthControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(signUpDTO)))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.validation.name").value("이름은 2자 이상 20자 이하로 입력해주세요."))
+			.andExpect(jsonPath("$.validation.username").value("이름은 2자 이상 20자 이하로 입력해주세요."))
 			.andDo(print());
 	}
 
@@ -164,7 +164,7 @@ class AuthControllerTest {
 		SignUpDTO signUpDTO = SignUpDTO.builder()
 			.email("test@gmail.com")
 			.password("password")
-			.name("a".repeat(21))
+			.username("a".repeat(21))
 			.build();
 
 		// expected
@@ -172,7 +172,7 @@ class AuthControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(signUpDTO)))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.validation.name").value("이름은 2자 이상 20자 이하로 입력해주세요."))
+			.andExpect(jsonPath("$.validation.username").value("이름은 2자 이상 20자 이하로 입력해주세요."))
 			.andDo(print());
 	}
 
@@ -188,7 +188,7 @@ class AuthControllerTest {
 			.build();
 
 		// expected
-		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/login")
+		MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(loginDTO)))
 			.andExpect(status().isOk())
@@ -216,7 +216,7 @@ class AuthControllerTest {
 			.build();
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.post("/login")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(loginDTO)))
 			.andExpect(status().isUnauthorized())

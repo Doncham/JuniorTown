@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserRepositoryImpl implements UserRepositoryCustom{
 	private final JPAQueryFactory jpaQueryFactory;
-	@Override
+	/*@Override
 	public List<User> getUsers() {
 		return null;
-	}
+	}*/
 }
