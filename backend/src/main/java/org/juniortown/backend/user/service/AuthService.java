@@ -19,6 +19,14 @@ public class AuthService {
 	private final BCryptPasswordEncoder encoder;
 
 
+	/**
+	 * Registers a new user with the provided sign-up information.
+	 *
+	 * If the email is already registered, throws an {@link AlreadyExistsEmailException}.
+	 *
+	 * @param signUpDTO the data transfer object containing user registration details
+	 * @throws AlreadyExistsEmailException if the email is already in use
+	 */
 	public void signUp(SignUpDTO signUpDTO) {
 		Boolean isExist = userRepository.existsByEmail(signUpDTO.getEmail());
 		if (isExist) {

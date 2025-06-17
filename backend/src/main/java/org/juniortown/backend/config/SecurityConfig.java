@@ -28,17 +28,37 @@ public class SecurityConfig {
 	private final AuthenticationConfiguration authenticationConfiguration;
 	private final JWTUtil jwtUtil;
 
-	//AuthenticationManager Bean 등록
+	/****
+	 * Provides the `AuthenticationManager` bean for authentication operations.
+	 *
+	 * @param configuration the authentication configuration used to obtain the manager
+	 * @return the configured `AuthenticationManager` instance
+	 * @throws Exception if the authentication manager cannot be retrieved
+	 */
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
 		return configuration.getAuthenticationManager();
 	}
 
+	/****
+	 * Provides a BCryptPasswordEncoder bean for password hashing.
+	 *
+	 * @return a BCryptPasswordEncoder instance
+	 */
 	@Bean
 	public BCryptPasswordEncoder bCryptPasswordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
+	/****
+	 * Configures the application's security filter chain, including CORS, CSRF, authentication, authorization, and custom filters.
+	 *
+	 * Sets up CORS to allow requests from "http://localhost:3000" with all methods and headers, enables credential support, and exposes the "Authorization" header. Disables CSRF protection, form login, and HTTP Basic authentication. Defines authorization rules to permit access to login, signup, and root endpoints, restrict "/admin" to users with the "ADMIN" role, and require authentication for all other endpoints. Registers a custom login filter for handling authentication at "/api/auth/login" and a JWT filter for validating tokens. Configures session management to be stateless.
+	 *
+	 * @param http the HttpSecurity to configure
+	 * @return the configured SecurityFilterChain
+	 * @throws Exception if an error occurs during configuration
+	 */
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http

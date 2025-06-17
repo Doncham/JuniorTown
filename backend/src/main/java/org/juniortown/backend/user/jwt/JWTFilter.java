@@ -19,6 +19,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JWTFilter extends OncePerRequestFilter {
 	private final JWTUtil jwtUtil;
+	/**
+	 * Processes incoming HTTP requests to authenticate users based on JWT tokens.
+	 *
+	 * If a valid, non-expired JWT token is present in the "Authorization" header, sets the authentication in the security context for the request. Otherwise, continues the filter chain without authentication.
+	 *
+	 * @param request the HTTP request
+	 * @param response the HTTP response
+	 * @param filterChain the filter chain to continue processing
+	 * @throws ServletException if an error occurs during filtering
+	 * @throws IOException if an I/O error occurs during filtering
+	 */
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 		FilterChain filterChain) throws ServletException, IOException {

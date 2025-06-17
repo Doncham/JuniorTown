@@ -32,6 +32,16 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 	private final JWTUtil jwtUtil;
 
 
+	/**
+	 * Attempts to authenticate a user by reading login credentials from the HTTP request body.
+	 *
+	 * Parses the request body as JSON to extract the user's email and password, then delegates authentication to the authentication manager.
+	 *
+	 * @param request the HTTP request containing login credentials in JSON format
+	 * @param response the HTTP response
+	 * @return the authenticated Authentication object if credentials are valid
+	 * @throws AuthenticationException if authentication fails or if the request body cannot be parsed as valid JSON
+	 */
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws
 		AuthenticationException {
@@ -44,7 +54,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 		}
 	}
 
-	//로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
+	/**
+	 * Handles actions upon successful user authentication, including JWT token issuance.
+	 *
+	 * Generates a JWT token valid for 24 hours using the authenticated user's username and role, adds it to the response header, and writes a JSON login success message to the response body with HTTP status 200.
+	 */
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
 		CustomUserDetails customUserDetails = (CustomUserDetails)authentication.getPrincipal();
@@ -74,7 +88,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 		}
 	}
 
-	//로그인 실패시 실행하는 메소드
+	/**
+	 * Handles actions to perform when user authentication fails during login.
+	 *
+	 * Sets the HTTP response status to 401 (Unauthorized) and writes a JSON-formatted failure message to the response body.
+	 */
 	@Override
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
 		log.error("Login failed: {}", failed.getMessage());

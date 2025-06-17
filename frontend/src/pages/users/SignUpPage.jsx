@@ -2,6 +2,13 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Renders a user registration form and handles sign-up logic.
+ *
+ * Displays input fields for username, email, and password, manages form state, and submits the data to the server. On successful registration, notifies the user and redirects to the login page.
+ *
+ * @returns {JSX.Element} The sign-up page component.
+ */
 export function SignUpPage() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const navigate = useNavigate();
