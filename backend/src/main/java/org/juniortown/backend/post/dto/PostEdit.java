@@ -1,4 +1,4 @@
-package org.juniortown.backend.request;
+package org.juniortown.backend.post.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;

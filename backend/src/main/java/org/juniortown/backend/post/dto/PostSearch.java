@@ -1,4 +1,4 @@
-package org.juniortown.backend.request;
+package org.juniortown.backend.post.dto;
 
 import static java.lang.Math.*;
 

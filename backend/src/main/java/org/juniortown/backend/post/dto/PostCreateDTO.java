@@ -1,4 +1,4 @@
-package org.juniortown.backend.request;
+package org.juniortown.backend.post.dto;
 
 import org.juniortown.backend.exception.InvalidRequest;
 
@@ -11,13 +11,13 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
-public class PostCreate {
+public class PostCreateDTO {
 	@NotBlank(message = "타이틀을 입력해주세요.")
 	private String title;
 	@NotBlank(message = "컨텐츠를 입력해주세요.")
 	private String content;
 	@Builder
-	public PostCreate(String title, String content) {
+	public PostCreateDTO(String title, String content) {
 		this.title = title;
 		this.content = content;
 	}

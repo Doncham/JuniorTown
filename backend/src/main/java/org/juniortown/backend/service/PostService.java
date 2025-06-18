@@ -1,24 +1,18 @@
 package org.juniortown.backend.service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.juniortown.backend.domain.Post;
-import org.juniortown.backend.domain.PostEditor;
+import org.juniortown.backend.post.dto.PostCreateDTO;
+import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.exception.PostNotFound;
-import org.juniortown.backend.repository.PostRepository;
-import org.juniortown.backend.request.PostCreate;
-import org.juniortown.backend.request.PostEdit;
-import org.juniortown.backend.request.PostSearch;
-import org.juniortown.backend.response.PostResponse;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.juniortown.backend.post.repository.PostRepository;
+import org.juniortown.backend.post.dto.PostEdit;
+import org.juniortown.backend.post.dto.PostSearch;
+import org.juniortown.backend.post.dto.PostResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.TransactionScoped;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PostService {
 	private final PostRepository postRepository;
-	public void write(PostCreate postCreate) {
+	public void write(PostCreateDTO postCreate) {
 		Post post = Post.builder()
 			.title(postCreate.getTitle())
 			.content(postCreate.getContent())

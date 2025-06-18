@@ -1,6 +1,6 @@
-package org.juniortown.backend.repository;
+package org.juniortown.backend.post.repository;
 
-import org.juniortown.backend.domain.Post;
+import org.juniortown.backend.post.entity.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

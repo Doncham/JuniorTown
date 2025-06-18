@@ -1,6 +1,6 @@
-package org.juniortown.backend.response;
+package org.juniortown.backend.post.dto;
 
-import org.juniortown.backend.domain.Post;
+import org.juniortown.backend.post.entity.Post;
 
 import lombok.Builder;
 import lombok.Getter;
