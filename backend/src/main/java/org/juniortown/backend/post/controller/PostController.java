@@ -1,8 +1,12 @@
 package org.juniortown.backend.post.controller;
 
-import org.juniortown.backend.post.dto.PostCreateDTO;
+import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.service.PostService;
+import org.juniortown.backend.user.dto.CustomUserDetails;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,11 +21,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class PostController {
-	PostService postService;
+	private final PostService postService;
 	@PostMapping("/post")
-	public ResponseEntity<?> create(@Valid @RequestBody PostCreateDTO postCreateDTO) {
-		PostService.create(postCreateDTO);
-		return ResponseEntity.ok().build();
+	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+		@Valid @RequestBody PostCreateRequest postCreateRequest) {
+		// 이거 null 체크를 해야하나?
+		Long userId = customUserDetails.getUserId();
+		PostResponse postResponse = postService.create(userId, postCreateRequest);
+		return ResponseEntity.status(HttpStatus.CREATED).body(postResponse);
 	}
 
 	@DeleteMapping("/post")

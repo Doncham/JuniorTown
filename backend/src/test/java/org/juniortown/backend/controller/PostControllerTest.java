@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.juniortown.backend.post.dto.PostCreateDTO;
+import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.post.dto.PostEdit;
@@ -50,7 +50,7 @@ class PostControllerTest {
 	@DisplayName("글 작성 요청 시 title 값은 필수다.")
 	void test2() throws Exception {
 		// given
-		PostCreateDTO request = PostCreateDTO.builder()
+		PostCreateRequest request = PostCreateRequest.builder()
 			.content("내용 입니다.")
 			.build();
 
@@ -72,7 +72,7 @@ class PostControllerTest {
 	@DisplayName("글 작성 요청 시 DB에 값이 저장된다.")
 	void test3() throws Exception {
 		// given
-		PostCreateDTO request = PostCreateDTO.builder()
+		PostCreateRequest request = PostCreateRequest.builder()
 			.title("제목 입니다.")
 			.content("내용 입니다.")
 			.build();
@@ -220,7 +220,7 @@ class PostControllerTest {
 	@DisplayName("게시글 작성 시 제목에 '바보'는 포함될 수 없다.")
 	void test11() throws Exception {
 		// expected
-		PostCreateDTO request = PostCreateDTO.builder()
+		PostCreateRequest request = PostCreateRequest.builder()
 			.title("나는 바보입니다.")
 			.content("반포자이")
 			.build();

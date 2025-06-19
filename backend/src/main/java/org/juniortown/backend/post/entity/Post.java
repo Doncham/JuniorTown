@@ -38,9 +38,10 @@ public class Post extends BaseTimeEntity {
 	private LocalDateTime deletedAt;
 
 	@Builder
-	public Post(String title, String content) {
+	public Post(String title, String content, User user) {
 		this.title = title;
 		this.content = content;
+		this.user = user;
 	}
 
 	public void edit(String title, String content) {

@@ -26,7 +26,6 @@ public class User extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-
 	private String name;
 	private String email;
 	private String password;
@@ -37,7 +36,8 @@ public class User extends BaseTimeEntity {
 	private List<Post> posts = new ArrayList<>();
 
 	@Builder
-	public User(String name, String email, String password, String role) {
+	public User(String name, String email, String password, String role, Long id) {
+		this.id = id;
 		this.name = name;
 		this.email = email;
 		this.password = password;
