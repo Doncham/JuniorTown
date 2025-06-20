@@ -5,6 +5,7 @@ import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.service.PostService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class PostController {
 	private final PostService postService;
-	@PostMapping("/post")
+	@PostMapping("/posts")
 	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@Valid @RequestBody PostCreateRequest postCreateRequest) {
 		// 이거 null 체크를 해야하나?
@@ -31,13 +32,13 @@ public class PostController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(postResponse);
 	}
 
-	@DeleteMapping("/post")
+	@DeleteMapping("/posts")
 	public ResponseEntity<?> delete() {
 		//PostService .delete();
 		return ResponseEntity.ok().build();
 	}
 
-	@PatchMapping("/post")
+	@PatchMapping("/posts")
 	public ResponseEntity<?> update() {
 		// PostService.update();
 		return ResponseEntity.ok().build();

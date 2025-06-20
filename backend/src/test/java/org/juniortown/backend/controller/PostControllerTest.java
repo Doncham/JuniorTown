@@ -14,23 +14,37 @@ import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.post.dto.PostEdit;
+import org.juniortown.backend.user.dto.LoginDTO;
+import org.juniortown.backend.user.jwt.JWTUtil;
+import org.juniortown.backend.user.request.SignUpDTO;
+import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@ActiveProfiles("test")
 class PostControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -39,38 +53,95 @@ class PostControllerTest {
 	private PostRepository postRepository;
 	@Autowired
 	private ObjectMapper objectMapper;
+	@Autowired
+	private AuthService authService;
+	@Autowired
+	private JWTUtil jwtUtil;
 
 	@BeforeEach
 	void clean() {
 		postRepository.deleteAll();
 	}
 
+	private static String jwt;
+
+	@BeforeAll
+	public void init() throws Exception {
+		SignUpDTO signUpDTO = SignUpDTO.builder()
+			.email("test@naver.com")
+			.password("1234")
+			.username("테스터")
+			.build();
+
+		LoginDTO loginDTO = LoginDTO.builder()
+			.email(signUpDTO.getEmail())
+			.password(signUpDTO.getPassword())
+			.build();
+		authService.signUp(signUpDTO);
+		// 로그인 후 JWT 토큰을 발급받는다.
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
+				.contentType(APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(loginDTO))
+			)
+			.andExpect(status().isOk())
+			.andDo(result -> {
+				jwt = result.getResponse().getHeader("Authorization");
+			});
+	}
+
 
 	@Test
-	@DisplayName("글 작성 요청 시 title 값은 필수다.")
-	void test2() throws Exception {
+	@DisplayName("회원 가입된 유저만 글 작성을 요청할 수 있다.")
+	// 물론 서비스에서 예외를 터뜨리기는 하지만 JWT 관련 예외라서 여기서 검증함.
+	void only_signupUser_can_make_post() throws Exception {
 		// given
 		PostCreateRequest request = PostCreateRequest.builder()
-			.content("내용 입니다.")
+			.title("제목입니다.")
+			.content("내용입니다.")
+			.build();
+
+		String json = objectMapper.writeValueAsString(request);
+
+		String ghostToken = jwtUtil.createJwt(100L, "test@gmail.com", "ROLE_USER", 1000L);
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts")
+				.contentType(APPLICATION_JSON)
+				.content(json)
+				.header("Authorization", "Bearer " + ghostToken)
+			)
+			.andExpect(jsonPath("$.code").value("404"))
+			.andExpect(jsonPath("$.message").value("해당 사용자를 찾을 수 없습니다."))
+			.andExpect(status().isNotFound())
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("글 작성 요청 시 content 값은 필수다.")
+	void need_content_when_create_post() throws Exception {
+		// given
+		PostCreateRequest request = PostCreateRequest.builder()
+			.title("제목 입니다.")
 			.build();
 
 		String json = objectMapper.writeValueAsString(request);
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.post("/posts")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts")
 				.contentType(APPLICATION_JSON)
 				.content(json)
+				.header("Authorization", jwt)
 			)
 			.andExpect(jsonPath("$.code").value("400"))
 			.andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
-			.andExpect(jsonPath("$.validation.title").value("타이틀을 입력해주세요."))
+			.andExpect(jsonPath("$.validation.content").value("컨텐츠를 입력해주세요."))
 			.andExpect(status().isBadRequest())
 			.andDo(print());
 	}
 
 	@Test
 	@DisplayName("글 작성 요청 시 DB에 값이 저장된다.")
-	void test3() throws Exception {
+	void post_should_be_in_DB() throws Exception {
 		// given
 		PostCreateRequest request = PostCreateRequest.builder()
 			.title("제목 입니다.")
@@ -79,11 +150,15 @@ class PostControllerTest {
 		String json = objectMapper.writeValueAsString(request);
 
 		// when
-		mockMvc.perform(MockMvcRequestBuilders.post("/posts")
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts")
 				.contentType(APPLICATION_JSON)
 				.content(json)
+				.header("Authorization", jwt)
 			)
-			.andExpect(status().isOk())
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.title").value(request.getTitle()))
+			.andExpect(jsonPath("$.content").value(request.getContent()))
+			.andExpect(jsonPath("$.userId").value(jwtUtil.getUserId(jwt.split(" ")[1])))
 			.andDo(print());
 
 		// then
@@ -94,6 +169,28 @@ class PostControllerTest {
 		assertEquals("내용 입니다.", post.getContent());
 
 	}
+
+	@Test
+	@DisplayName("글 작성 요청 시 DB에 값이 저장된다.")
+	void post_create_success() throws Exception {
+		// given
+		PostCreateRequest request = PostCreateRequest.builder()
+			.title("제목 입니다.")
+			.content("내용 입니다.")
+			.build();
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts")
+				.contentType(APPLICATION_JSON)
+				.content(json)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isCreated())
+			.andDo(print());
+	}
+
+
 
 	@Test
 	@DisplayName("글 1개 조회")
