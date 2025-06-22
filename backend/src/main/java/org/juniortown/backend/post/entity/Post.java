@@ -1,7 +1,11 @@
 package org.juniortown.backend.post.entity;
 
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+
+import org.hibernate.annotations.Filters;
+import org.hibernate.annotations.Where;
 import org.juniortown.backend.entity.BaseTimeEntity;
 import org.juniortown.backend.user.entity.User;
 
@@ -47,6 +51,11 @@ public class Post extends BaseTimeEntity {
 	public void edit(String title, String content) {
 		this.title = title == null ? this.title : title;
 		this.content = content == null ? this.content : content;
+	}
+
+	public void softDelete(Clock clock) {
+		this.deletedAt = LocalDateTime.now(clock);
+
 	}
 
 

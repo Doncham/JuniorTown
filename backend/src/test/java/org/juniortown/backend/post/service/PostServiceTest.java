@@ -3,6 +3,7 @@ package org.juniortown.backend.post.service;
 
 import static org.mockito.Mockito.*;
 
+import java.time.Clock;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
@@ -31,6 +32,11 @@ class PostServiceTest {
 	private PostRepository postRepository;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private Clock clock;
+
+	@Mock
+	private Post post;
 
 	@BeforeEach
 	void clear() {
@@ -71,6 +77,7 @@ class PostServiceTest {
 	}
 
 	@Test
+	@DisplayName("게시글 생성 실패 - 사용자 존재하지 않음")
 	void createPost_userNotFound_throws() {
 		// given
 		PostCreateRequest postCreateRequest = PostCreateRequest.builder()
@@ -87,6 +94,27 @@ class PostServiceTest {
 			.isInstanceOf(UserNotFoundException.class)
 			.hasMessage("해당 사용자를 찾을 수 없습니다.");
 
+	}
+
+	@Test
+	@DisplayName("게시글 삭제 성공")
+	void deletePost_success() {
+		// given
+		Long userId = 1L;
+		Long postId = 1L;
+
+		Post postMock = mock(Post.class);
+		User userMock = mock(User.class);
+		when(userMock.getId()).thenReturn(userId);
+		when(postMock.getUser()).thenReturn(userMock);
+
+		when(postRepository.findById(postId)).thenReturn(Optional.of(postMock));
+
+		// when
+		postService.delete(postId,userId);
+
+		// then
+		verify(postMock).softDelete(clock);
 	}
 
 
