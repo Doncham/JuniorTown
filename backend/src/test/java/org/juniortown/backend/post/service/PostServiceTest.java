@@ -9,6 +9,9 @@ import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.entity.Post;
+import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
+import org.juniortown.backend.post.exception.PostNotFoundException;
+import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
@@ -37,6 +40,8 @@ class PostServiceTest {
 
 	@Mock
 	private Post post;
+	@Mock
+	private User user;
 
 	@BeforeEach
 	void clear() {
@@ -103,20 +108,80 @@ class PostServiceTest {
 		Long userId = 1L;
 		Long postId = 1L;
 
-		Post postMock = mock(Post.class);
-		User userMock = mock(User.class);
-		when(userMock.getId()).thenReturn(userId);
-		when(postMock.getUser()).thenReturn(userMock);
+		when(user.getId()).thenReturn(userId);
+		when(post.getUser()).thenReturn(user);
 
-		when(postRepository.findById(postId)).thenReturn(Optional.of(postMock));
+		when(postRepository.findById(postId)).thenReturn(Optional.of(post));
 
 		// when
 		postService.delete(postId,userId);
 
 		// then
-		verify(postMock).softDelete(clock);
+		verify(post).softDelete(clock);
 	}
 
+	@Test
+	@DisplayName("게시글 수정 성공")
+	void update_post_success() {
+		// given
+		Long postId = 1L;
+		Long userId = 1L;
 
+		PostCreateRequest editRequest = PostCreateRequest.builder()
+			.title("Changed Title")
+			.content("Changed Content")
+			.build();
 
+		// when
+		when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+		when(post.getUser()).thenReturn(user);
+		when(user.getId()).thenReturn(userId);
+		postService.update(postId, userId, editRequest);
+
+		// then
+		verify(post).update(editRequest, clock);
+	}
+
+	@Test
+	@DisplayName("게시글 수정 실패 - 게시글이 존재하지 않음")
+	void update_post_not_found_failure() {
+		// given
+		Long postId = 1L;
+		Long userId = 1L;
+
+		PostCreateRequest editRequest = PostCreateRequest.builder()
+			.title("Changed Title")
+			.content("Changed Content")
+			.build();
+
+		when(postRepository.findById(postId)).thenReturn(Optional.empty());
+
+		// when & then
+		Assertions.assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
+			.isInstanceOf(PostNotFoundException.class)
+			.hasMessage("해당 게시글을 찾을 수 없습니다.");
+	}
+
+	@Test
+	@DisplayName("게시글 수정 실패 - 권한 없음")
+	void update_post_no_permission_failure() {
+		// given
+		Long postId = 1L;
+		Long userId = 1L;
+
+		PostCreateRequest editRequest = PostCreateRequest.builder()
+			.title("Changed Title")
+			.content("Changed Content")
+			.build();
+
+		// when
+		when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+		when(post.getUser()).thenReturn(user);
+		when(user.getId()).thenReturn(userId + 1);
+
+		// then
+		Assertions.assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
+			.isInstanceOf(PostUpdatePermissionDeniedException.class)
+			.hasMessage("해당 게시글을 수정할 권한이 없습니다.");
+	}
 }

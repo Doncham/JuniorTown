@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.Filters;
 import org.hibernate.annotations.Where;
 import org.juniortown.backend.entity.BaseTimeEntity;
+import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -48,15 +49,14 @@ public class Post extends BaseTimeEntity {
 		this.user = user;
 	}
 
-	public void edit(String title, String content) {
-		this.title = title == null ? this.title : title;
-		this.content = content == null ? this.content : content;
-	}
-
 	public void softDelete(Clock clock) {
 		this.deletedAt = LocalDateTime.now(clock);
 
 	}
 
-
+	public void update(PostCreateRequest postCreateRequest, Clock clock) {
+		this.title = postCreateRequest.getTitle();
+		this.content = postCreateRequest.getContent();
+		this.updatedAt = LocalDateTime.now(clock);
+	}
 }

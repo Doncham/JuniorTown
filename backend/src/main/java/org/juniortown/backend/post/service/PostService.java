@@ -2,10 +2,12 @@ package org.juniortown.backend.post.service;
 
 import java.time.Clock;
 
+import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.entity.Post;
-import org.juniortown.backend.post.exception.NoRightForDeleteException;
+import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
+import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
@@ -36,15 +38,30 @@ public class PostService {
 	@Transactional
 	public void delete(Long postId, Long userId) {
 		Post post = postRepository.findById(postId)
-			.orElseThrow(() -> new UserNotFoundException());
+			.orElseThrow(() -> new PostNotFoundException());
 
 		if (!post.getUser().getId().equals(userId)) {
-			throw new NoRightForDeleteException();
+			throw new PostDeletePermissionDeniedException();
 		}
 
 		//postRepository.delete(post);
 		// soft delete
 		post.softDelete(clock);
+		log.info("게시글 삭제 성공: {}", post);
 
+	}
+
+	@Transactional
+	public PostResponse update(Long postId, Long userId, PostCreateRequest postCreateRequest) {
+		Post post = postRepository.findById(postId)
+			.orElseThrow(() -> new PostNotFoundException());
+
+		if (!post.getUser().getId().equals(userId)) {
+			throw new PostUpdatePermissionDeniedException();
+		}
+
+		post.update(postCreateRequest, clock);
+		log.info("게시글 업데이트 성공: {}", post);
+		return new PostResponse(post);
 	}
 }

@@ -3,16 +3,15 @@ package org.juniortown.backend.post.exception;
 import org.juniortown.backend.exception.CustomException;
 import org.springframework.http.HttpStatus;
 
-public class NoRightForDeleteException extends CustomException {
-	private static final String MESSAGE = "해당 게시글을 삭제할 권한이 없습니다.";
+public class PostUpdatePermissionDeniedException extends CustomException {
+	private static final String MESSAGE = "해당 게시글을 수정할 권한이 없습니다.";
 
-	public NoRightForDeleteException() {
+	public PostUpdatePermissionDeniedException() {
 		super(MESSAGE);
 	}
 
 	@Override
 	public int getStatusCode() {
-		// 403
 		return HttpStatus.FORBIDDEN.value();
 	}
 }
