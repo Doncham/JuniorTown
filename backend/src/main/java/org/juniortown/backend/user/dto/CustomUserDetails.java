@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.juniortown.backend.user.entity.User;
+import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -33,5 +34,9 @@ public class CustomUserDetails implements UserDetails {
 	@Override
 	public String getUsername() {
 		return user.getEmail();
+	}
+
+	public Long getUserId() {
+		return user.getId();
 	}
 }

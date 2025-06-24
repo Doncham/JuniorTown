@@ -32,8 +32,9 @@ public class User extends BaseTimeEntity {
 
 	private String role;
 
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Post> posts = new ArrayList<>();
+	// 일단 단방향으로 설계하고 필요하면 양방향으로 변환
+	// @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	// private List<Post> posts = new ArrayList<>();
 
 	@Builder
 	public User(String name, String email, String password, String role, Long id) {
