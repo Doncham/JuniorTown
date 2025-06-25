@@ -12,6 +12,9 @@ import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final Clock clock;
+	private final static int PAGE_SIZE = 10;
 	@Transactional
 	public PostResponse create(Long userId, PostCreateRequest postCreateRequest) {
 		User user = userRepository.findById(userId)
@@ -63,5 +67,13 @@ public class PostService {
 		post.update(postCreateRequest, clock);
 		log.info("게시글 업데이트 성공: {}", post);
 		return new PostResponse(post);
+	}
+	@Transactional
+	public Page<PostResponse> getPosts(int page) {
+		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+		Page<Post> postPage = postRepository.findAll(pageable);
+
+		return postPage.map(post -> new PostResponse(post));
+
 	}
 }
