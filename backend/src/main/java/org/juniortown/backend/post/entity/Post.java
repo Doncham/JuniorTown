@@ -4,8 +4,6 @@ package org.juniortown.backend.post.entity;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.Filters;
-import org.hibernate.annotations.Where;
 import org.juniortown.backend.entity.BaseTimeEntity;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.user.entity.User;

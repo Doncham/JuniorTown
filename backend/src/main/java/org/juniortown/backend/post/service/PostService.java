@@ -74,6 +74,5 @@ public class PostService {
 		Page<Post> postPage = postRepository.findAll(pageable);
 
 		return postPage.map(post -> new PostResponse(post));
-
 	}
 }

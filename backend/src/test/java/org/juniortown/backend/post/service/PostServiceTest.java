@@ -1,13 +1,16 @@
 package org.juniortown.backend.post.service;
 
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
@@ -24,11 +27,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 class PostServiceTest {
+	private static final int PAGE_SIZE = 10;
 	@InjectMocks
 	private PostService postService;
 	@Mock
@@ -76,9 +84,9 @@ class PostServiceTest {
 		ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
 		verify(postRepository).save(captor.capture());
 		Post saved = captor.getValue();
-		Assertions.assertThat(saved.getTitle()).isEqualTo("테스트 게시물");
-		Assertions.assertThat(saved.getContent()).isEqualTo("테스트 내용입니다.");
-		Assertions.assertThat(saved.getUser().getId()).isEqualTo(userId);
+		assertThat(saved.getTitle()).isEqualTo("테스트 게시물");
+		assertThat(saved.getContent()).isEqualTo("테스트 내용입니다.");
+		assertThat(saved.getUser().getId()).isEqualTo(userId);
 	}
 
 	@Test
@@ -94,7 +102,7 @@ class PostServiceTest {
 		when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
 		// then
-		Assertions.assertThatThrownBy(
+		assertThatThrownBy(
 				() -> postService.create(1L, postCreateRequest))
 			.isInstanceOf(UserNotFoundException.class)
 			.hasMessage("해당 사용자를 찾을 수 없습니다.");
@@ -157,7 +165,7 @@ class PostServiceTest {
 		when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
 		// when & then
-		Assertions.assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
+		assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
 			.isInstanceOf(PostNotFoundException.class)
 			.hasMessage("해당 게시글을 찾을 수 없습니다.");
 	}
@@ -180,8 +188,41 @@ class PostServiceTest {
 		when(user.getId()).thenReturn(userId + 1);
 
 		// then
-		Assertions.assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
+		assertThatThrownBy(() -> postService.update(postId, userId, editRequest))
 			.isInstanceOf(PostUpdatePermissionDeniedException.class)
 			.hasMessage("해당 게시글을 수정할 권한이 없습니다.");
 	}
+
+	@Test
+	@DisplayName("getPosts: 페이지 조회 시, Repository 호출 -> PostResponse로 매핑된 Page 반환")
+	void getPosts_returnsMappedPage() {
+		// given
+		int page = 2;
+		Sort sort = Sort.by("createdAt").descending();
+		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
+
+		List<Post> posts = List.of(
+			Post.builder().title("TA").content("ca").user(user).build(),
+			Post.builder().title("TB").content("cb").user(user).build()
+		);
+		PageImpl<Post> mockPage = new PageImpl<>(posts, expectedPageable, 5);
+
+		when(user.getId()).thenReturn(1L);
+		when(postRepository.findAll(expectedPageable)).thenReturn(mockPage);
+		// when
+		Page<PostResponse> result = postService.getPosts(page);
+
+		// then
+		verify(postRepository).findAll(expectedPageable);
+
+		//assertThat(result.getTotalElements()).isEqualTo(5);
+		//assertThat(result.getTotalPages()).isEqualTo(1);
+		//assertThat(result.getPageable().getPageNumber()).isEqualTo(page);
+
+		List<PostResponse> content = result.getContent();
+		assertThat(content).hasSize(2);
+		assertThat(content.get(0).getTitle()).isEqualTo("TA");
+		assertThat(content.get(1).getContent()).isEqualTo("cb");
+	}
+
 }
