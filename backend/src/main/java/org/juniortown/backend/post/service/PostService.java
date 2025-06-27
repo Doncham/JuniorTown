@@ -2,6 +2,7 @@ package org.juniortown.backend.post.service;
 
 import java.time.Clock;
 
+import org.juniortown.backend.post.dto.response.PostSearchResponse;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostResponse;
@@ -69,10 +70,10 @@ public class PostService {
 		return new PostResponse(post);
 	}
 	@Transactional
-	public Page<PostResponse> getPosts(int page) {
+	public Page<PostSearchResponse> getPosts(int page) {
 		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
 		Page<Post> postPage = postRepository.findAll(pageable);
 
-		return postPage.map(post -> new PostResponse(post));
+		return postPage.map(post -> new PostSearchResponse(post));
 	}
 }

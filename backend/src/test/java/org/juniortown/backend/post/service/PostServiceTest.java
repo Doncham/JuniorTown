@@ -197,7 +197,7 @@ class PostServiceTest {
 	@DisplayName("getPosts: 페이지 조회 시, Repository 호출 -> PostResponse로 매핑된 Page 반환")
 	void getPosts_returnsMappedPage() {
 		// given
-		int page = 2;
+		int page = 0;
 		Sort sort = Sort.by("createdAt").descending();
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
 
@@ -205,7 +205,7 @@ class PostServiceTest {
 			Post.builder().title("TA").content("ca").user(user).build(),
 			Post.builder().title("TB").content("cb").user(user).build()
 		);
-		PageImpl<Post> mockPage = new PageImpl<>(posts, expectedPageable, 5);
+		PageImpl<Post> mockPage = new PageImpl<>(posts, expectedPageable, 2);
 
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAll(expectedPageable)).thenReturn(mockPage);
@@ -215,14 +215,41 @@ class PostServiceTest {
 		// then
 		verify(postRepository).findAll(expectedPageable);
 
-		//assertThat(result.getTotalElements()).isEqualTo(5);
-		//assertThat(result.getTotalPages()).isEqualTo(1);
-		//assertThat(result.getPageable().getPageNumber()).isEqualTo(page);
+		assertThat(result.getTotalElements()).isEqualTo(2);
+		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
+		assertThat(result.getTotalPages()).isEqualTo(1);
+		// 현재 페이지 번호
+		assertThat(result.getNumber()).isEqualTo(0);
+		// 현재 페이지에 들어있는 요소의 개수
+		assertThat(result.getNumberOfElements()).isEqualTo(2);
 
 		List<PostResponse> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
 		assertThat(content.get(1).getContent()).isEqualTo("cb");
+	}
+
+	@Test
+	@DisplayName("getPosts: 페이지 조회 시, 빈 페이지 반환")
+	void getPosts_emptyPage() {
+		//given
+		int page = 0;
+		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+		Page<Post> emptyPage = Page.empty(pageable);
+
+		when(postRepository.findAll(pageable)).thenReturn(emptyPage);
+
+		// when
+		Page<PostResponse> result = postService.getPosts(page);
+
+		// then
+		assertThat(result.getContent()).isEmpty();
+		assertThat(result.getTotalElements()).isEqualTo(0);
+		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
+		assertThat(result.getTotalPages()).isEqualTo(0);
+		assertThat(result.getNumber()).isEqualTo(0);
+		assertThat(result.getNumberOfElements()).isEqualTo(0);
+
 	}
 
 }

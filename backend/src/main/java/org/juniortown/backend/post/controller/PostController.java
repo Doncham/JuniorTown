@@ -1,12 +1,13 @@
 package org.juniortown.backend.post.controller;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PageResponse;
+import org.juniortown.backend.post.dto.response.PostSearchResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.service.PostService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -53,11 +54,10 @@ public class PostController {
 
 	// 게시글 목록 조회, 페이지네이션 적용
 	@GetMapping("/posts/{page}")
-	public ResponseEntity<Page<PostResponse>> getPosts(@PathVariable int page) {
-		Page<PostResponse> posts = postService.getPosts(page);
-		return ResponseEntity.ok(posts);
+	public ResponseEntity<PageResponse<PostSearchResponse>> getPosts(@PathVariable int page) {
+	 	Page<PostSearchResponse> posts = postService.getPosts(page);
+		PageResponse<PostSearchResponse> response = new PageResponse<>(posts);
+		return ResponseEntity.ok(response);
 	}
-
-
 
 }
