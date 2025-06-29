@@ -15,6 +15,7 @@ import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,9 +72,20 @@ public class PostService {
 	}
 	@Transactional
 	public Page<PostSearchResponse> getPosts(int page) {
-		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
-		Page<Post> postPage = postRepository.findAll(pageable);
+		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+		Page<Post> postPage = postRepository.findAllByDeletedAtIsNull(pageable);
 
 		return postPage.map(post -> new PostSearchResponse(post));
+	}
+	@Transactional
+	public PostResponse getPost(Long postId) {
+		Post post = postRepository.findById(postId)
+			.orElseThrow(() -> new PostNotFoundException());
+		// 삭제된 게시글은 조회할 수 없음, 하드 코딩을 통한 삭제된 게시글을 조회 시도 차단
+		if (post.getDeletedAt() != null) {
+			throw new PostNotFoundException();
+		}
+
+		return new PostResponse(post);
 	}
 }

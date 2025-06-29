@@ -13,6 +13,7 @@ public class PostResponse {
 	private final String title;
 	private final String content;
 	private Long userId;
+	private String userName;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
@@ -23,6 +24,7 @@ public class PostResponse {
 		this.content = post.getContent();
 		// 이거 null 체크 어지럽네
 		this.userId = post.getUser().getId();
+		this.userName = post.getUser().getName();
 		this.createdAt = post.getCreatedAt();
 		this.updatedAt = post.getUpdatedAt();
 		this.deletedAt = post.getDeletedAt();

@@ -60,4 +60,10 @@ public class PostController {
 		return ResponseEntity.ok(response);
 	}
 
+	@GetMapping("/posts/details/{postId}")
+	public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
+		PostResponse postResponse = postService.getPost(postId);
+		return ResponseEntity.ok(postResponse);
+	}
+
 }

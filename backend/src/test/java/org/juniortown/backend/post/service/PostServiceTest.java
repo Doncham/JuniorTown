@@ -8,11 +8,10 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
-import org.assertj.core.api.Assertions;
+
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
-import org.juniortown.backend.post.dto.response.PostResponse;
+import org.juniortown.backend.post.dto.response.PostSearchResponse;
 import org.juniortown.backend.post.entity.Post;
-import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
 import org.juniortown.backend.post.repository.PostRepository;
@@ -202,18 +201,18 @@ class PostServiceTest {
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
 
 		List<Post> posts = List.of(
-			Post.builder().title("TA").content("ca").user(user).build(),
-			Post.builder().title("TB").content("cb").user(user).build()
+			Post.builder().title("TA").user(user).build(),
+			Post.builder().title("TB").user(user).build()
 		);
 		PageImpl<Post> mockPage = new PageImpl<>(posts, expectedPageable, 2);
 
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAll(expectedPageable)).thenReturn(mockPage);
+		when(postRepository.findAllByDeletedAtIsNull(expectedPageable)).thenReturn(mockPage);
 		// when
-		Page<PostResponse> result = postService.getPosts(page);
+		Page<PostSearchResponse> result = postService.getPosts(page);
 
 		// then
-		verify(postRepository).findAll(expectedPageable);
+		verify(postRepository).findAllByDeletedAtIsNull(expectedPageable);
 
 		assertThat(result.getTotalElements()).isEqualTo(2);
 		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
@@ -223,10 +222,9 @@ class PostServiceTest {
 		// 현재 페이지에 들어있는 요소의 개수
 		assertThat(result.getNumberOfElements()).isEqualTo(2);
 
-		List<PostResponse> content = result.getContent();
+		List<PostSearchResponse> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
-		assertThat(content.get(1).getContent()).isEqualTo("cb");
 	}
 
 	@Test
@@ -237,10 +235,10 @@ class PostServiceTest {
 		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
 		Page<Post> emptyPage = Page.empty(pageable);
 
-		when(postRepository.findAll(pageable)).thenReturn(emptyPage);
+		when(postRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(emptyPage);
 
 		// when
-		Page<PostResponse> result = postService.getPosts(page);
+		Page<PostSearchResponse> result = postService.getPosts(page);
 
 		// then
 		assertThat(result.getContent()).isEmpty();
