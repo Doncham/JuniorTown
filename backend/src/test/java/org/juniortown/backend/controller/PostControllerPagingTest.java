@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.Clock;
+import java.util.UUID;
 
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
@@ -70,8 +71,10 @@ public class PostControllerPagingTest {
 	}
 	@BeforeAll
 	public void init() throws Exception {
+		UUID uuid = UUID.randomUUID();
+		String email = uuid + "@naver.com";
 		SignUpDTO signUpDTO = SignUpDTO.builder()
-			.email("test@naver.com")
+			.email(email)
 			.password("1234")
 			.username("테스터")
 			.build();
@@ -81,7 +84,7 @@ public class PostControllerPagingTest {
 			.password(signUpDTO.getPassword())
 			.build();
 		authService.signUp(signUpDTO);
-		testUser = userRepository.findByEmail("test@naver.com").get();
+		testUser = userRepository.findByEmail(email).get();
 
 		// 로그인 후 JWT 토큰을 발급받는다.
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")

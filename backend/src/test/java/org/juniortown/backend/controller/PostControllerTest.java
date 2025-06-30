@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -78,8 +79,10 @@ class PostControllerTest {
 
 	@BeforeAll
 	public void init() throws Exception {
+		UUID uuid = UUID.randomUUID();
+		String email = uuid + "@naver.com";
 		SignUpDTO signUpDTO = SignUpDTO.builder()
-			.email("test@naver.com")
+			.email(email)
 			.password("1234")
 			.username("테스터")
 			.build();
@@ -89,7 +92,7 @@ class PostControllerTest {
 			.password(signUpDTO.getPassword())
 			.build();
 		authService.signUp(signUpDTO);
-		testUser = userRepository.findByEmail("test@naver.com").get();
+		testUser = userRepository.findByEmail(email).get();
 
 		// 로그인 후 JWT 토큰을 발급받는다.
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
@@ -431,6 +434,47 @@ class PostControllerTest {
 			.andExpect(jsonPath("$.code").value("400"))
 			.andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
 			.andExpect(jsonPath("$.validation.content").value("컨텐츠를 입력해주세요."))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("글 상세 조회 성공")
+	void getPostDetail_success() throws Exception {
+		// given
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("글 상세 조회 실패 - 존재하지 않는 게시글")
+	void getPostDetail_nonExistPost_failure() throws Exception {
+		// given
+		Long postId = 0L;
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}" ,postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("404"))
+			.andExpect(jsonPath("$.message").value("해당 게시글을 찾을 수 없습니다."))
 			.andDo(print());
 	}
 

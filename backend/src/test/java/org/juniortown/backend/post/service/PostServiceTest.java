@@ -10,6 +10,7 @@ import java.util.Optional;
 
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostSearchResponse;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostNotFoundException;
@@ -247,6 +248,51 @@ class PostServiceTest {
 		assertThat(result.getTotalPages()).isEqualTo(0);
 		assertThat(result.getNumber()).isEqualTo(0);
 		assertThat(result.getNumberOfElements()).isEqualTo(0);
+	}
+
+	@Test
+	@DisplayName("getPost: 페이지 상세 조회 성공")
+	void getPost_return_pageDetail() {
+		// given
+		long postId = 1L;
+		long userId = 2L;
+		String title = "testTitle";
+		String content = "testContent";
+		String name = "testName";
+		Post post = Post.builder()
+			.user(user)
+			.content(content)
+			.title(title)
+			.build();
+
+		// when
+		//when(user.getId()).thenReturn(userId);
+		when(user.getName()).thenReturn(name);
+		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+
+		PostResponse result = postService.getPost(postId);
+
+		// then
+		assertThat(result.getContent()).isEqualTo(content);
+		assertThat(result.getTitle()).isEqualTo(title);
+		assertThat(result.getUserName()).isEqualTo(name);
+		verify(postRepository).findById(postId);
+	}
+
+	@Test
+	@DisplayName("getPost: 삭제된 페이지 조회 실패")
+	void getPost_not_return_deleted_page() {
+		// given
+		Long postId = 999L;
+
+		// when
+		when(postRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+		// then
+		assertThatThrownBy(() -> postService.getPost(postId))
+			.isInstanceOf(PostNotFoundException.class)
+			.hasMessage("해당 게시글을 찾을 수 없습니다.");
+
 
 	}
 
