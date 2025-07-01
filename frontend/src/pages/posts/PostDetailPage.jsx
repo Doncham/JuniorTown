@@ -21,8 +21,13 @@ const PostDetailPage = () => {
       setError(null);
 
       try {
+        const token = localStorage.getItem('jwt');
         // GET /api/posts/{id} 엔드포인트 호출
-        const response = await axios.get(`/api/posts/${id}`);
+        const response = await axios.get(`/api/posts/details/${id}`, {
+          headers: {
+            'Authorization': `${token}`,
+          },
+        });
         setPost(response.data);
       } catch (err) {
         console.error('게시물 상세 조회 중 오류 발생:', err);

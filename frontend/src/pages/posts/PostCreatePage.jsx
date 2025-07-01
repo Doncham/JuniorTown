@@ -15,10 +15,16 @@ const PostCreatePage = () => {
     const postData = { title, content };
 
     try {
-      const response = await axios.post('/api/posts', postData);
+      const token = localStorage.getItem('jwt');
+      const response = await axios.post('/api/posts', postData, {
+        headers: {
+          'Authorization': `${token}`,
+        },
+      });
+
       // const result = response.data;
 
-      navigate('/posts', { replace: true }); 
+      navigate('/posts', { replace: true });
     } catch (error) {
       console.error('게시물 작성 중 오류 발생:', error);
       alert('게시물 등록에 실패했습니다. 다시 시도해 주세요.');
