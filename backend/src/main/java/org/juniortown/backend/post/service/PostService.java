@@ -70,14 +70,14 @@ public class PostService {
 		log.info("게시글 업데이트 성공: {}", post);
 		return new PostResponse(post);
 	}
-	@Transactional
+	@Transactional(readOnly = true)
 	public Page<PostSearchResponse> getPosts(int page) {
 		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
 		Page<Post> postPage = postRepository.findAllByDeletedAtIsNull(pageable);
 
 		return postPage.map(post -> new PostSearchResponse(post));
 	}
-	@Transactional
+	@Transactional(readOnly = true)
 	public PostResponse getPost(Long postId) {
 		Post post = postRepository.findById(postId)
 			.orElseThrow(() -> new PostNotFoundException());

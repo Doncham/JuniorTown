@@ -22,6 +22,12 @@ const PostDetailPage = () => {
       try {
         const token = localStorage.getItem('jwt');
         // JWT 파싱 (try-catch로 에러 방어 추천)
+        try {
+          const payload = JSON.parse(base64.decode(token.split('.')[1]));
+          setMyUserId(payload.userId);
+        } catch (error) {
+          console.error('JWT 파싱 오류:', error);
+        }
         let loginUserId = null;
         if (token) {
           const payload = JSON.parse(base64.decode(token.split('.')[1]));

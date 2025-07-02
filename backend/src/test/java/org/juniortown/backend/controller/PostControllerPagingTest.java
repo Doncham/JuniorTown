@@ -10,7 +10,6 @@ import java.util.UUID;
 
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
-import org.juniortown.backend.post.service.PostService;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.jwt.JWTUtil;
@@ -31,7 +30,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import net.bytebuddy.utility.dispatcher.JavaDispatcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

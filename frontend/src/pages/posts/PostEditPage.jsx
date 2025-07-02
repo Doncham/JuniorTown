@@ -51,6 +51,11 @@ const PostEditPage = () => {
 
     const token = localStorage.getItem('jwt');
 
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login', { replace: true });
+      return;
+    }
     try {
       // PUT /api/posts/{id}로 수정 요청
   

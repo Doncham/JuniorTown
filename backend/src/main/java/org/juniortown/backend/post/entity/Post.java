@@ -22,7 +22,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@NoArgsConstructor(access = AccessLevel.PUBLIC)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Post extends BaseTimeEntity {
 	@Id
@@ -55,6 +55,5 @@ public class Post extends BaseTimeEntity {
 	public void update(PostCreateRequest postCreateRequest, Clock clock) {
 		this.title = postCreateRequest.getTitle();
 		this.content = postCreateRequest.getContent();
-		this.updatedAt = LocalDateTime.now(clock);
 	}
 }

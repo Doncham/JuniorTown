@@ -16,6 +16,11 @@ const PostCreatePage = () => {
 
     try {
       const token = localStorage.getItem('jwt');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        navigate('/login', { replace: true });
+        return;
+      }
       const response = await axios.post('/api/posts', postData, {
         headers: {
           'Authorization': `${token}`,
