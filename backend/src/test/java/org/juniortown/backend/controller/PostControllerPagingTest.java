@@ -31,6 +31,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import net.bytebuddy.utility.dispatcher.JavaDispatcher;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -182,6 +184,4 @@ public class PostControllerPagingTest {
 			.andExpect(jsonPath("$.totalElements").value(52)) // 전체 게시글 수에서 삭제된 게시글 제외
 			.andDo(print());
 	}
-
-
 }

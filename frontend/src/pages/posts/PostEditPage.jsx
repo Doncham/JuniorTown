@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Form, Button, Spinner, Alert } from 'react-bootstrap';
+import base64 from 'base-64';
 
 const PostEditPage = () => {
   // 1. URL에서 id 파라미터를 추출
@@ -21,7 +22,13 @@ const PostEditPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`/api/posts/${id}`);
+        const token = localStorage.getItem('jwt');
+      
+        const response = await axios.get(`/api/posts/details/${id}`, {
+          headers: {
+            'Authorization': `${token}`,
+          },
+        });
         // 성공적으로 데이터를 받아오면 title과 content를 초기화
         setTitle(response.data.title);
         setContent(response.data.content);
@@ -42,11 +49,18 @@ const PostEditPage = () => {
     setSaving(true);
     setError(null);
 
+    const token = localStorage.getItem('jwt');
+
     try {
       // PUT /api/posts/{id}로 수정 요청
+  
       await axios.patch(`/api/posts/${id}`, {
         title,
         content,
+      }, {
+        headers: {
+          'Authorization': `${token}`,
+        },
       });
       // 수정이 완료되면 상세 페이지로 이동
       navigate(`/posts/${id}`, { replace: true });
