@@ -43,12 +43,13 @@ public class JWTFilter extends OncePerRequestFilter {
 
 		String username = jwtUtil.getUsername(token);
 		String role = jwtUtil.getRole(token);
+		Long userId = jwtUtil.getUserId(token);
 
 		//userEntity를 생성하여 값 set
 		User user = User.builder()
+			.id(userId)
 			.email(username)
 			.role(role)
-
 			.build();
 
 		CustomUserDetails customUserDetails = new CustomUserDetails(user);

@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.juniortown.backend.entity.BaseTimeEntity;
+import org.juniortown.backend.post.entity.Post;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class User extends BaseTimeEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -26,15 +29,19 @@ public class User {
 	private String name;
 	private String email;
 	private String password;
-	private LocalDateTime createdAt;
+
 	private String role;
 
+	// 일단 단방향으로 설계하고 필요하면 양방향으로 변환
+	// @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	// private List<Post> posts = new ArrayList<>();
+
 	@Builder
-	public User(String name, String email, String password, String role) {
+	public User(String name, String email, String password, String role, Long id) {
+		this.id = id;
 		this.name = name;
 		this.email = email;
 		this.password = password;
-		this.createdAt = LocalDateTime.now();
 		this.role = role;
 	}
 }

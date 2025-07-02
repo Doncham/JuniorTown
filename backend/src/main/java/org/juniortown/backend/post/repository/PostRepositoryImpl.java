@@ -1,10 +1,11 @@
-package org.juniortown.backend.repository;
+package org.juniortown.backend.post.repository;
 
 import java.util.List;
 
-import org.juniortown.backend.domain.Post;
-import org.juniortown.backend.domain.QPost;
-import org.juniortown.backend.request.PostSearch;
+import org.juniortown.backend.post.entity.Post;
+
+import org.juniortown.backend.post.dto.PostSearch;
+import org.juniortown.backend.post.entity.QPost;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 

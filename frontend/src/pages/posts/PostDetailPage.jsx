@@ -1,49 +1,79 @@
-// src/pages/PostDetailPage.jsx
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Card, Spinner, Alert, Button } from 'react-bootstrap';
+import base64 from 'base-64';
 
 const PostDetailPage = () => {
-  const { id } = useParams();      // URL에서 id 파라미터 추출
-  const navigate = useNavigate();  // 뒤로가기 등 내비게이션용
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  // 게시물 단건 상태
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // 로그인 사용자 id 저장
+  const [myUserId, setMyUserId] = useState(null);
 
-  // 컴포넌트 마운트 시(또는 id가 바뀔 때) 해당 게시물 조회
+  // 게시글 조회 및 내 userId 파싱
   useEffect(() => {
     const fetchPost = async () => {
       setLoading(true);
       setError(null);
-
       try {
-        // GET /api/posts/{id} 엔드포인트 호출
-        const response = await axios.get(`/api/posts/${id}`);
+        const token = localStorage.getItem('jwt');
+        // JWT 파싱 (try-catch로 에러 방어 추천)
+        try {
+          const payload = JSON.parse(base64.decode(token.split('.')[1]));
+          setMyUserId(payload.userId);
+        } catch (error) {
+          console.error('JWT 파싱 오류:', error);
+        }
+        let loginUserId = null;
+        if (token) {
+          const payload = JSON.parse(base64.decode(token.split('.')[1]));
+          loginUserId = payload.userId;
+          setMyUserId(loginUserId);
+        }
+        // GET /api/posts/details/{id}
+        const response = await axios.get(`/api/posts/details/${id}`, {
+          headers: {
+            'Authorization': `${token}`,
+          },
+        });
         setPost(response.data);
       } catch (err) {
-        console.error('게시물 상세 조회 중 오류 발생:', err);
         setError('해당 게시물을 불러오는 데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchPost();
   }, [id]);
 
-  // 뒤로 가기 버튼
-  const handleBack = () => {
-    navigate(-1);
-  };
+  const handleBack = () => navigate(-1);
 
-  // 수정 페이지로 이동 (예: /posts/edit/:id)
+  // 게시글 수정 페이지로 이동
   const handleEdit = () => {
     navigate(`/posts/edit/${id}`);
   };
+
+  // 게시글 삭제 (선택)
+  const handleDelete = async () => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      const token = localStorage.getItem('jwt');
+      await axios.delete(`/api/posts/${id}`, {
+        headers: { 'Authorization': `${token}` },
+      });
+      alert('게시글이 삭제되었습니다.');
+      navigate('/posts');
+    } catch (err) {
+      alert('게시물 삭제에 실패했습니다.');
+    }
+  };
+
+  // 내 userId와 게시글 userId 비교
+  const isOwner = post && myUserId && String(post.userId) === String(myUserId);
 
   return (
     <Container className="mt-4">
@@ -51,7 +81,6 @@ const PostDetailPage = () => {
         &larr; 뒤로 가기
       </Button>
 
-      {/* 로딩 중일 때 */}
       {loading && (
         <div className="d-flex justify-content-center my-5">
           <Spinner animation="border" role="status">
@@ -60,14 +89,12 @@ const PostDetailPage = () => {
         </div>
       )}
 
-      {/* 에러 발생 시 */}
       {error && (
         <Alert variant="danger" className="my-3">
           {error}
         </Alert>
       )}
 
-      {/* 데이터 로드 후 */}
       {!loading && !error && (
         <>
           {post ? (
@@ -91,9 +118,19 @@ const PostDetailPage = () => {
                 </Card.Text>
               </Card.Body>
               <Card.Footer className="bg-white border-0 text-end">
-                <Button variant="outline-primary" onClick={handleEdit}>
-                  수정하기
-                </Button>
+                {/* 소유자만 수정/삭제 버튼 노출 */}
+                {isOwner ? (
+                  <>
+                    <Button variant="outline-primary" onClick={handleEdit} className="me-2">
+                      수정하기
+                    </Button>
+                    <Button variant="outline-danger" onClick={handleDelete}>
+                      삭제하기
+                    </Button>
+                  </>
+                ) : (
+                  <span className="text-muted">본인 게시글만 수정/삭제할 수 있습니다.</span>
+                )}
               </Card.Footer>
             </Card>
           ) : (

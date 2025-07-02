@@ -16,7 +16,7 @@ export function LoginPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     // TODO: 백엔드 API 호출
-    axios.post('api/auth/login', credentials)
+    axios.post('/api/auth/login', credentials)
       .then(res => {
         const token = res.headers['authorization'];
         localStorage.setItem('jwt', token); 

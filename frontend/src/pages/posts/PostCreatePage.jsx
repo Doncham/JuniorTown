@@ -15,10 +15,21 @@ const PostCreatePage = () => {
     const postData = { title, content };
 
     try {
-      const response = await axios.post('/api/posts', postData);
+      const token = localStorage.getItem('jwt');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        navigate('/login', { replace: true });
+        return;
+      }
+      const response = await axios.post('/api/posts', postData, {
+        headers: {
+          'Authorization': `${token}`,
+        },
+      });
+
       // const result = response.data;
 
-      navigate('/posts', { replace: true }); 
+      navigate('/posts', { replace: true });
     } catch (error) {
       console.error('게시물 작성 중 오류 발생:', error);
       alert('게시물 등록에 실패했습니다. 다시 시도해 주세요.');
