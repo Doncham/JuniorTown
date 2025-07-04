@@ -11,7 +11,8 @@ import java.util.Optional;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostResponse;
-import org.juniortown.backend.post.dto.response.PostSearchResponse;
+import org.juniortown.backend.post.dto.response.PostWithLikeCount;
+import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
@@ -210,7 +211,7 @@ class PostServiceTest {
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAllByDeletedAtIsNull(expectedPageable)).thenReturn(mockPage);
 		// when
-		Page<PostSearchResponse> result = postService.getPosts(page);
+		Page<PostWithLikeCountProjection> result = postService.getPosts(page);
 
 		// then
 		verify(postRepository).findAllByDeletedAtIsNull(expectedPageable);
@@ -223,7 +224,7 @@ class PostServiceTest {
 		// 현재 페이지에 들어있는 요소의 개수
 		assertThat(result.getNumberOfElements()).isEqualTo(2);
 
-		List<PostSearchResponse> content = result.getContent();
+		List<PostWithLikeCountProjection> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
 	}
@@ -239,7 +240,7 @@ class PostServiceTest {
 		when(postRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(emptyPage);
 
 		// when
-		Page<PostSearchResponse> result = postService.getPosts(page);
+		Page<PostWithLikeCountProjection> result = postService.getPosts(page);
 
 		// then
 		assertThat(result.getContent()).isEmpty();

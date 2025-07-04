@@ -34,11 +34,11 @@ class LikeServiceTest {
 	@Mock
 	private PostRepository postRepository;
 	@Mock
+	private LikeRepository likeRepository;
+	@Mock
 	private Post post;
 	@Mock
 	private User user;
-	@Mock
-	private LikeRepository likeRepository;
 	@Mock
 	private Like like;
 
@@ -75,7 +75,7 @@ class LikeServiceTest {
 		LikeResponse likeResponse = likeService.likePost(userId, postId);
 
 		// then
-		//verify(likeRepository).deleteById(any(Long.class));
+		verify(likeRepository).deleteById(any(Long.class));
 		assertThat(likeResponse.getUserId()).isEqualTo(userId);
 		assertThat(likeResponse.getPostId()).isEqualTo(postId);
 		assertThat(likeResponse.getIsLiked()).isFalse();

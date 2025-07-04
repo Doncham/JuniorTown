@@ -40,8 +40,6 @@ class LikeControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 	@Autowired
-	private LikeController likeController;
-	@Autowired
 	private PostRepository postRepository;
 	@Autowired
 	private UserRepository userRepository;
@@ -51,8 +49,6 @@ class LikeControllerTest {
 	private ObjectMapper objectMapper;
 	@Autowired
 	private AuthService authService;
-	@Autowired
-	private JWTUtil jwtUtil;
 	private static String jwt;
 	private User testUser;
 	private Post testPost;
@@ -103,7 +99,6 @@ class LikeControllerTest {
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts/likes/" + postId)
 				.header("Authorization", jwt)
-				.contentType(APPLICATION_JSON)
 			)
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.userId").value(testUser.getId()))
@@ -125,7 +120,6 @@ class LikeControllerTest {
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts/likes/" + postId)
 				.header("Authorization", jwt)
-				.contentType(APPLICATION_JSON)
 			)
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.userId").value(testUser.getId()))
@@ -142,7 +136,6 @@ class LikeControllerTest {
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts/likes/" + postId)
 				.header("Authorization", jwt)
-				.contentType(APPLICATION_JSON)
 			)
 			.andExpect(status().is5xxServerError())
 			.andExpect(jsonPath("$.code").value("500"))
