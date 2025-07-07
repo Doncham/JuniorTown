@@ -8,6 +8,7 @@ public interface PostWithLikeCountProjection {
 	String getUsername();
 	Long getUserId();
 	Long getLikeCount();
+	Boolean getIsLiked();
 	LocalDateTime getCreatedAt();
 	LocalDateTime getUpdatedAt();
 }

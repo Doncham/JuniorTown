@@ -34,7 +34,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
+@Transactional
 public class PostControllerPagingTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -69,7 +70,6 @@ public class PostControllerPagingTest {
 
 	@BeforeEach
 	void clean_and_init() {
-		postRepository.deleteAll();
 		// 게시글 더미 데이터 생성
 		for (int i = 0; i < POST_COUNT; i++) {
 			Post post = Post.builder()

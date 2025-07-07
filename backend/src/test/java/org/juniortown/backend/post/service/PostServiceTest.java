@@ -1,6 +1,5 @@
 package org.juniortown.backend.post.service;
 
-
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -8,10 +7,8 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
-
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostResponse;
-import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostNotFoundException;
@@ -202,19 +199,22 @@ class PostServiceTest {
 		Sort sort = Sort.by("createdAt").descending();
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
 
-		List<Post> posts = List.of(
-			Post.builder().title("TA").user(user).build(),
-			Post.builder().title("TB").user(user).build()
-		);
-		PageImpl<Post> mockPage = new PageImpl<>(posts, expectedPageable, 2);
+		PostWithLikeCountProjection post1 = mock(PostWithLikeCountProjection.class);
+		when(post1.getTitle()).thenReturn("TA");
+		PostWithLikeCountProjection post2 = mock(PostWithLikeCountProjection.class);
+		when(post2.getTitle()).thenReturn("TB");
 
+		int totalElements = 2;
+
+		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
+		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAllByDeletedAtIsNull(expectedPageable)).thenReturn(mockPage);
+		when(postRepository.findAllWithLikeCount(user.getId(), expectedPageable)).thenReturn(mockPage);
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(page);
+		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
 
 		// then
-		verify(postRepository).findAllByDeletedAtIsNull(expectedPageable);
+		verify(postRepository).findAllWithLikeCount(user.getId(), expectedPageable);
 
 		assertThat(result.getTotalElements()).isEqualTo(2);
 		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
@@ -227,6 +227,7 @@ class PostServiceTest {
 		List<PostWithLikeCountProjection> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
+		assertThat(content.get(1).getTitle()).isEqualTo("TB");
 	}
 
 	@Test
@@ -235,12 +236,12 @@ class PostServiceTest {
 		//given
 		int page = 0;
 		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
-		Page<Post> emptyPage = Page.empty(pageable);
-
-		when(postRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(emptyPage);
+		Page<PostWithLikeCountProjection> emptyPage = Page.empty(pageable);
+		when(user.getId()).thenReturn(1L);
+		when(postRepository.findAllWithLikeCount(user.getId(),pageable)).thenReturn(emptyPage);
 
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(page);
+		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
 
 		// then
 		assertThat(result.getContent()).isEmpty();
@@ -293,8 +294,6 @@ class PostServiceTest {
 		assertThatThrownBy(() -> postService.getPost(postId))
 			.isInstanceOf(PostNotFoundException.class)
 			.hasMessage("해당 게시글을 찾을 수 없습니다.");
-
-
 	}
 
 }

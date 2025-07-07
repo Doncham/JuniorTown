@@ -72,9 +72,9 @@ public class PostService {
 		return new PostResponse(post);
 	}
 	@Transactional(readOnly = true)
-	public Page<PostWithLikeCountProjection> getPosts(int page) {
+	public Page<PostWithLikeCountProjection> getPosts(Long userId, int page) {
 		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
-		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(pageable);
+		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(userId, pageable);
 		return postPage;
 		//return postPage.map(post -> new PostWithLikeCount(post));
 	}
