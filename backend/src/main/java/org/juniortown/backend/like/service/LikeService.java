@@ -29,12 +29,12 @@ public class LikeService {
 
 		if(like.isEmpty()){
 			try{
-				likeRepository.save(Like.builder()
+				Like newLike = Like.builder()
 					.user(user)
-					// 저장하는 시점에 post가 삭제될 수 있으니까 try-catch로 잡음.
 					.post(post)
-					.build()
-				);
+					.build();
+				likeRepository.save(newLike);
+				
 				return LikeResponse.builder()
 					.userId(userId)
 					.postId(postId)
@@ -45,7 +45,11 @@ public class LikeService {
 			}
 		}
 		else{
-			likeRepository.deleteById(like.get().getId());
+			try {
+				likeRepository.deleteById(like.get().getId());
+			} catch (Exception e) {
+				throw new LikeFailureException(e);
+			}
 
 			return LikeResponse.builder()
 				.userId(userId)

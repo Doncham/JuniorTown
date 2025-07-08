@@ -23,6 +23,11 @@ const PostListPage = () => {
       setError(null);
       try {
         const token = localStorage.getItem('jwt');
+        if (!token) {
+          alert('로그인이 필요합니다.');
+          navigate('/login', { replace: true });
+          return; // Stop fetching posts if not logged in
+        }
         // 서버가 쿼리 파라미터로 page를 받는 걸 권장
         const response = await axios.get(`/api/posts/${page}`, {
           headers: {
@@ -61,8 +66,13 @@ const PostListPage = () => {
   }
 
   const handleLike = async (postId, currentIsLiked, currentLikeCount) => {
+    const token = localStorage.getItem('jwt');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login', { replace: true });
+      return; // Stop if not logged in
+    }
     try {
-      const token = localStorage.getItem('jwt');
       const response = await axios.post(`/api/posts/likes/${postId}`, null, {
         headers: { 'Authorization': `${token}` },
       });

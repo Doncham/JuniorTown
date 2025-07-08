@@ -56,7 +56,7 @@ public class ExceptionController {
 	public ResponseEntity<ErrorResponse> exceptionHandler(Exception e) {
 		log.error("Exception: ", e);
 		ErrorResponse response = ErrorResponse.builder()
-			.code(e.getMessage())
+			.code("500")
 			.message("서버 오류입니다.")
 			.build();
 

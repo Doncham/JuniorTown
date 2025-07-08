@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class LikeController {
 	private final LikeService likeService;
 	@PostMapping("/posts/likes/{postId}")
-	public ResponseEntity<LikeResponse> like(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId) {
+	public ResponseEntity<LikeResponse> toggleLike(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId) {
 		Long userId = customUserDetails.getUserId();
 		LikeResponse response = likeService.likePost(userId, postId);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
