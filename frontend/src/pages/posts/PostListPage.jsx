@@ -60,6 +60,33 @@ const PostListPage = () => {
     );
   }
 
+  const handleLike = async (postId, currentIsLiked, currentLikeCount) => {
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await axios.post(`/api/posts/likes/${postId}`, null, {
+        headers: { 'Authorization': `${token}` },
+      });
+      const { isLiked } = response.data;
+
+      // posts 배열에서 해당 post의 isLiked, likeCount 업데이트
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+              ...post,
+              isLiked: isLiked,
+              likeCount: isLiked
+                ? currentLikeCount + 1
+                : Math.max(0, currentLikeCount - 1),
+            }
+            : post
+        )
+      );
+    } catch (err) {
+      alert('좋아요 처리에 실패했습니다.');
+    }
+  };
+
   return (
     <Container className="mt-4">
       <h2>게시물 목록</h2>
@@ -106,6 +133,7 @@ const PostListPage = () => {
                   <th>제목</th>
                   <th>작성일</th>
                   <th>작성자</th>
+                  <th>좋아요</th>
                   <th>액션</th>
                 </tr>
               </thead>
@@ -118,6 +146,22 @@ const PostListPage = () => {
                     </td>
                     <td>{new Date(post.createdAt).toLocaleString('ko-KR')}</td>
                     <td>{post.username}</td>
+                    <td style={{ textAlign: 'center', fontSize: '1.25rem' }}>
+                      <button
+                        style={{
+                          border: 'none',
+                          background: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          color: post.isLiked ? '#dc3545' : '#adb5bd',
+                        }}
+                        aria-label={post.isLiked ? '좋아요 취소' : '좋아요'}
+                        onClick={() => handleLike(post.id, post.isLiked, post.likeCount)}
+                      >
+                        {post.isLiked ? '❤️' : '🤍'}
+                      </button>
+                      <span style={{ fontWeight: 'bold', marginLeft: 4 }}>{post.likeCount}</span>
+                    </td>
                     <td>
                       <Button size="sm" variant="outline-primary" onClick={() => navigate(`/posts/${post.id}`)}>
                         상세 보기
@@ -126,6 +170,7 @@ const PostListPage = () => {
                   </tr>
                 ))}
               </tbody>
+
             </Table>
           )}
         </>
