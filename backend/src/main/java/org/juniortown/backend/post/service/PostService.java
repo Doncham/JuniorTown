@@ -2,7 +2,8 @@ package org.juniortown.backend.post.service;
 
 import java.time.Clock;
 
-import org.juniortown.backend.post.dto.response.PostSearchResponse;
+import org.juniortown.backend.post.dto.response.PostWithLikeCount;
+import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostResponse;
@@ -71,11 +72,10 @@ public class PostService {
 		return new PostResponse(post);
 	}
 	@Transactional(readOnly = true)
-	public Page<PostSearchResponse> getPosts(int page) {
+	public Page<PostWithLikeCountProjection> getPosts(Long userId, int page) {
 		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
-		Page<Post> postPage = postRepository.findAllByDeletedAtIsNull(pageable);
-
-		return postPage.map(post -> new PostSearchResponse(post));
+		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(userId, pageable);
+		return postPage;
 	}
 	@Transactional(readOnly = true)
 	public PostResponse getPost(Long postId) {
