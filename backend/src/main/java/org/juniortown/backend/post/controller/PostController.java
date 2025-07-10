@@ -6,11 +6,13 @@ import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.service.PostService;
+import org.juniortown.backend.post.service.ViewCountService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class PostController {
 	private final PostService postService;
+	private final ViewCountService viewCountService;
 	@PostMapping("/posts")
 	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@Valid @RequestBody PostCreateRequest postCreateRequest) {
@@ -65,8 +68,23 @@ public class PostController {
 	}
 
 	@GetMapping("/posts/details/{postId}")
-	public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
+	public ResponseEntity<PostResponse> getPost(@AuthenticationPrincipal CustomUserDetails customUserDetails
+		,@PathVariable Long postId
+		,@CookieValue(value = "guestId", required = false) String guestId
+	) {
 		PostResponse postResponse = postService.getPost(postId);
+		if(customUserDetails == null) {
+			// 비회원인 경우
+			// 쿠키값을 레디스에 등록
+			viewCountService.readCountUp(guestId, String.valueOf(postId));
+		} else {
+			// 회원인 경우
+			// userId,postId를 조합해서 레디스에 등록
+			Long userId = customUserDetails.getUserId();
+			viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
+		}
+
+
 		return ResponseEntity.ok(postResponse);
 	}
 

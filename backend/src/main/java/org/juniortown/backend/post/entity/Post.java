@@ -40,6 +40,9 @@ public class Post extends BaseTimeEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
+	@Column(name = "read_count", nullable = false)
+	private Long readCount = 0L;
+
 	@Builder
 	public Post(String title, String content, User user) {
 		this.title = title;

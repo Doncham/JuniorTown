@@ -34,7 +34,7 @@ public class LikeService {
 					.post(post)
 					.build();
 				likeRepository.save(newLike);
-				
+
 				return LikeResponse.builder()
 					.userId(userId)
 					.postId(postId)

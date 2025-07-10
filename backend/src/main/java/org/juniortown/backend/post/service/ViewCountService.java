@@ -1,0 +1,44 @@
+package org.juniortown.backend.post.service;
+
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class ViewCountService {
+	@Qualifier("keyCheckRedisTemplate")
+	private final RedisTemplate<String, Boolean> keyCheckRedisTemplate;
+	@Qualifier("readCountRedisTemplate")
+	private final RedisTemplate<String, Long> readCountRedisTemplate;
+	// 조회수증분키 형태, post:viewCount:{postId}:{userId}
+	private static final String VIEW_COUNT_KEY = "post:viewCount:";
+	// 중복방지키 형태, postDup:key:{postId}:{userId}
+	private static final String DUP_PREVENT_KEY = "postDup:key:";
+
+
+	public void readCountUp(String userId, String postId) {
+		String dupKey = DUP_PREVENT_KEY + postId + ":" + userId;
+		// dupKey 조회
+		Boolean exist = keyCheckRedisTemplate.opsForValue().get(dupKey);
+		if (exist != null && exist) {
+			// 10분이 지나지 않았으니 조회수가 늘지 않는다.
+			log.info("이미 최근에 조회한 게시글 - 게시글 카운트 증가 x");
+		}else{
+			// 중복키 생성
+			keyCheckRedisTemplate.opsForValue().set(dupKey,true, 10, TimeUnit.MINUTES);
+
+			// 조회수증분키에 조회수 1증가
+			String readCountKey = VIEW_COUNT_KEY + postId + ":" + userId;
+			readCountRedisTemplate.opsForValue().increment(readCountKey);
+		}
+	}
+}
