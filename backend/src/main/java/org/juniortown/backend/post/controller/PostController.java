@@ -83,8 +83,6 @@ public class PostController {
 			Long userId = customUserDetails.getUserId();
 			viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
 		}
-
-
 		return ResponseEntity.ok(postResponse);
 	}
 
