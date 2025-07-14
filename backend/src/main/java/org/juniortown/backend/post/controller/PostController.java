@@ -72,7 +72,7 @@ public class PostController {
 		,@PathVariable Long postId
 		,@CookieValue(value = "guestId", required = false) String guestId
 	) {
-		PostResponse postResponse = postService.getPost(postId);
+		Long redisReadCount = 0L;
 		if(customUserDetails == null) {
 			// 비회원인 경우
 			// 쿠키값을 레디스에 등록
@@ -81,8 +81,11 @@ public class PostController {
 			// 회원인 경우
 			// userId,postId를 조합해서 레디스에 등록
 			Long userId = customUserDetails.getUserId();
-			viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
+			redisReadCount = viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
 		}
+
+		PostResponse postResponse = postService.getPost(postId);
+		postResponse.addReadCount(redisReadCount);
 		return ResponseEntity.ok(postResponse);
 	}
 

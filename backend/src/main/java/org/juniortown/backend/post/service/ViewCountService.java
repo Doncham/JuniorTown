@@ -25,8 +25,9 @@ public class ViewCountService {
 	private static final String DUP_PREVENT_KEY = "postDup:key:";
 
 
-	public void readCountUp(String userId, String postId) {
+	public Long readCountUp(String userId, String postId) {
 		String dupKey = DUP_PREVENT_KEY + postId + ":" + userId;
+		String readCountKey = VIEW_COUNT_KEY + postId + ":" + userId;
 		// dupKey 조회
 		Boolean exist = keyCheckRedisTemplate.opsForValue().get(dupKey);
 		if (exist != null && exist) {
@@ -35,10 +36,10 @@ public class ViewCountService {
 		}else{
 			// 중복키 생성
 			keyCheckRedisTemplate.opsForValue().set(dupKey,true, 10, TimeUnit.MINUTES);
-
-			// 조회수증분키에 조회수 1증가
-			String readCountKey = VIEW_COUNT_KEY + postId + ":" + userId;
+			// 조회수 증분키에 조회수 1증가
 			readCountRedisTemplate.opsForValue().increment(readCountKey);
 		}
+		Long readCount = readCountRedisTemplate.opsForValue().get(readCountKey);
+		return readCount != null ? readCount : 0L;
 	}
 }

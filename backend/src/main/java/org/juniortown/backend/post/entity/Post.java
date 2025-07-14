@@ -52,7 +52,6 @@ public class Post extends BaseTimeEntity {
 
 	public void softDelete(Clock clock) {
 		this.deletedAt = LocalDateTime.now(clock);
-
 	}
 
 	public void update(PostCreateRequest postCreateRequest, Clock clock) {
