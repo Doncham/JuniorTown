@@ -1,10 +1,13 @@
 package org.juniortown.backend.controller;
 
 import static org.springframework.http.MediaType.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.UUID;
 
+import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
@@ -12,6 +15,7 @@ import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,24 +24,37 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.testcontainers.RedisContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
+//@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
 @Transactional
-public class PostRedisReadController {
+@Testcontainers
+@Import(RedisTestConfig.class)
+public class PostRedisReadControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
+	@Autowired
 	private PostRepository postRepository;
 	@Autowired
 	private UserRepository userRepository;
@@ -48,16 +65,41 @@ public class PostRedisReadController {
 	@Autowired
 	private JWTUtil jwtUtil;
 
+	@Value("${spring.data.redis.host}")
+	String redisHost;
+
+	@Value("${spring.data.redis.port}")
+	String redisPort;
+
+	@Container
+	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
+		.withCommand("redis-server --port 6380")
+		.withExposedPorts(6380);
+
+
+	@DynamicPropertySource
+	static void overrideProps(DynamicPropertyRegistry registry) {
+		System.out.println("Redis 컨테이너 IP: " + redis.getHost());
+		System.out.println("Redis 컨테이너 포트: " + redis.getMappedPort(6380));
+		registry.add("spring.data.redis.host", redis::getHost);
+		registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort());
+	}
+
 	@BeforeEach
 	void clean() {
+		userRepository.deleteAll();
 		postRepository.deleteAll();
 	}
+
+
 
 	private static String jwt;
 	private User testUser;
 
-	@BeforeAll
+	@BeforeEach
 	public void init() throws Exception {
+		// System.out.println("Redis Host: " + redisHost);
+		// System.out.println("Redis Port: " + redisPort);
 		UUID uuid = UUID.randomUUID();
 		String email = uuid + "@naver.com";
 		SignUpDTO signUpDTO = SignUpDTO.builder()
@@ -85,14 +127,35 @@ public class PostRedisReadController {
 	}
 
 	@Test
-	@DisplayName("게시글 조회수 증가 성공 - 중복키 존재 x")
-	void test1(){
+	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
+	void test1() throws Exception {
 		// 1.게시글 상세 조회할 때 조회수도 이제 반환해줘야 함
 		// 2.조회수는 DB에 있는 값 + Redis에 있는 값이다.
 		// 3.상세 조회 로직을 통해 redis에 있는 증분값이 증가한다.
 		// 3-1. redis의 증분값이 여러 테스트에서 독립적으로 유지될지 모르겠네
 		// 3-2?. testContainer를 쓰면 테스트마다 다른 레디스 컨테이너를 사용하나?
 		// 4.먼저 redis 증분값을 증가시키고 조회수 값을 가져와야 한다.
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andDo(print());
+
 	}
+
+	// 게시글 조회수 증가 테스트를 회원/비회원을 나눠서 테스트해야하나? ㅇㅇ 복붙하면 되지
+
+
 
 }
