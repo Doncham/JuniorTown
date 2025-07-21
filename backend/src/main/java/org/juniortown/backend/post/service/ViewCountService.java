@@ -27,7 +27,7 @@ public class ViewCountService {
 
 	public Long readCountUp(String userId, String postId) {
 		String dupKey = DUP_PREVENT_KEY + postId + ":" + userId;
-		String readCountKey = VIEW_COUNT_KEY + postId + ":" + userId;
+		String readCountKey = VIEW_COUNT_KEY + postId;
 		// dupKey 조회
 		Boolean exist = keyCheckRedisTemplate.opsForValue().get(dupKey);
 		if (exist != null && exist) {

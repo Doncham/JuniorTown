@@ -76,7 +76,7 @@ public class PostController {
 		if(customUserDetails == null) {
 			// 비회원인 경우
 			// 쿠키값을 레디스에 등록
-			viewCountService.readCountUp(guestId, String.valueOf(postId));
+			redisReadCount = viewCountService.readCountUp(guestId, String.valueOf(postId));
 		} else {
 			// 회원인 경우
 			// userId,postId를 조합해서 레디스에 등록

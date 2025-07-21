@@ -128,7 +128,7 @@ public class PostRedisReadControllerTest {
 
 	@Test
 	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
-	void test1() throws Exception {
+	void read_count_increase_with_user() throws Exception {
 		// 1.게시글 상세 조회할 때 조회수도 이제 반환해줘야 함
 		// 2.조회수는 DB에 있는 값 + Redis에 있는 값이다.
 		// 3.상세 조회 로직을 통해 redis에 있는 증분값이 증가한다.
@@ -149,13 +149,153 @@ public class PostRedisReadControllerTest {
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
+			.andDo(print())
 			.andExpect(jsonPath("$.content").value("테스트 내용"))
-			.andDo(print());
-
+			.andExpect(jsonPath("$.readCount").value(1));
 	}
 
 	// 게시글 조회수 증가 테스트를 회원/비회원을 나눠서 테스트해야하나? ㅇㅇ 복붙하면 되지
 
 
+	@Test
+	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
+	void read_count_increase_with_non_user() throws Exception {
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+			)
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andExpect(jsonPath("$.readCount").value(1));
+	}
+
+	@Test
+	@DisplayName("게시글 조회 2번 -> 1번만 조회수 증가(회원) - 중복키 존재 o")
+	void dup_key_prevent_read_count_increase() throws Exception {
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+			.contentType(APPLICATION_JSON)
+			.header("Authorization", jwt)
+		).andReturn();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andExpect(jsonPath("$.readCount").value(1));
+	}
+
+	@Test
+	@DisplayName("게시글 조회 2번 -> 1번만 조회수 증가(비회원) - 중복키 존재 o")
+	void dup_key_prevent_read_count_increase_with_non_user() throws Exception {
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+			.contentType(APPLICATION_JSON)
+		).andReturn();
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+			)
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andExpect(jsonPath("$.readCount").value(1));
+	}
+
+	@Test
+	@DisplayName("게시글 조회 2번(회원 + 비회원 조회) -> readCount:2")
+	void two_user_read_api_make_get_two_read_count() throws Exception {
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+		// 비회원 조회
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+			.contentType(APPLICATION_JSON)
+		).andReturn();
+
+		// 회원 조회
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andExpect(jsonPath("$.readCount").value(2));
+	}
+	@Test
+	@DisplayName("글 상세 조회 성공")
+	void getPostDetail_success() throws Exception {
+		// given
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		Post savePost = postRepository.save(post);
+		Long postId = savePost.getId();
+
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content").value("테스트 내용"))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("글 상세 조회 실패 - 존재하지 않는 게시글")
+	void getPostDetail_nonExistPost_failure() throws Exception {
+		// given
+		Long postId = 0L;
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}" ,postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("404"))
+			.andExpect(jsonPath("$.message").value("해당 게시글을 찾을 수 없습니다."))
+			.andDo(print());
+	}
 
 }
