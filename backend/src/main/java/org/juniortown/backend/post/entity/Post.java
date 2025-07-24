@@ -58,4 +58,8 @@ public class Post extends BaseTimeEntity {
 		this.title = postCreateRequest.getTitle();
 		this.content = postCreateRequest.getContent();
 	}
+
+	public void addReadCount(Long redisReadCount) {
+		this.readCount += redisReadCount;
+	}
 }

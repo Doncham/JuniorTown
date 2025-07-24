@@ -58,6 +58,8 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'com.redis:testcontainers-redis:2.2.2'
 
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.0'
+
 }
 
 tasks.named('test') {

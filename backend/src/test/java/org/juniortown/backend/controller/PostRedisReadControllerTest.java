@@ -1,34 +1,36 @@
 package org.juniortown.backend.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
+import org.juniortown.backend.post.service.ViewCountSyncService;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
-import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -63,13 +65,13 @@ public class PostRedisReadControllerTest {
 	@Autowired
 	private AuthService authService;
 	@Autowired
-	private JWTUtil jwtUtil;
-
-	@Value("${spring.data.redis.host}")
-	String redisHost;
-
-	@Value("${spring.data.redis.port}")
-	String redisPort;
+	private ViewCountSyncService viewCountSyncService;
+	@Autowired
+	@Qualifier("readCountRedisTemplate")
+	private RedisTemplate<String, Long> readCountRedisTemplate;
+	@Autowired
+	private RedissonClient redissonClient;
+	Post testPost;
 
 	@Container
 	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
@@ -84,14 +86,6 @@ public class PostRedisReadControllerTest {
 		registry.add("spring.data.redis.host", redis::getHost);
 		registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort());
 	}
-
-	@BeforeEach
-	void clean() {
-		userRepository.deleteAll();
-		postRepository.deleteAll();
-	}
-
-
 
 	private static String jwt;
 	private User testUser;
@@ -115,6 +109,14 @@ public class PostRedisReadControllerTest {
 		authService.signUp(signUpDTO);
 		testUser = userRepository.findByEmail(email).get();
 
+		Post post = Post.builder()
+			.user(testUser)
+			.title("테스트 글")
+			.content("테스트 내용")
+			.build();
+
+		testPost = postRepository.save(post);
+
 		// 로그인 후 JWT 토큰을 발급받는다.
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
 				.contentType(APPLICATION_JSON)
@@ -126,6 +128,12 @@ public class PostRedisReadControllerTest {
 			});
 	}
 
+	// @AfterEach
+	// void clean() {
+	// 	userRepository.deleteAll();
+	// 	postRepository.deleteAll();
+	// }
+
 	@Test
 	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
 	void read_count_increase_with_user() throws Exception {
@@ -135,14 +143,8 @@ public class PostRedisReadControllerTest {
 		// 3-1. redis의 증분값이 여러 테스트에서 독립적으로 유지될지 모르겠네
 		// 3-2?. testContainer를 쓰면 테스트마다 다른 레디스 컨테이너를 사용하나?
 		// 4.먼저 redis 증분값을 증가시키고 조회수 값을 가져와야 한다.
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
 
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 				.contentType(APPLICATION_JSON)
@@ -160,14 +162,7 @@ public class PostRedisReadControllerTest {
 	@Test
 	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
 	void read_count_increase_with_non_user() throws Exception {
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 				.contentType(APPLICATION_JSON)
@@ -181,14 +176,7 @@ public class PostRedisReadControllerTest {
 	@Test
 	@DisplayName("게시글 조회 2번 -> 1번만 조회수 증가(회원) - 중복키 존재 o")
 	void dup_key_prevent_read_count_increase() throws Exception {
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 			.contentType(APPLICATION_JSON)
@@ -208,14 +196,7 @@ public class PostRedisReadControllerTest {
 	@Test
 	@DisplayName("게시글 조회 2번 -> 1번만 조회수 증가(비회원) - 중복키 존재 o")
 	void dup_key_prevent_read_count_increase_with_non_user() throws Exception {
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 			.contentType(APPLICATION_JSON)
@@ -233,14 +214,7 @@ public class PostRedisReadControllerTest {
 	@Test
 	@DisplayName("게시글 조회 2번(회원 + 비회원 조회) -> readCount:2")
 	void two_user_read_api_make_get_two_read_count() throws Exception {
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 		// 비회원 조회
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
@@ -261,14 +235,7 @@ public class PostRedisReadControllerTest {
 	@DisplayName("글 상세 조회 성공")
 	void getPostDetail_success() throws Exception {
 		// given
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
+		Long postId = testPost.getId();
 
 
 		// expected
@@ -297,5 +264,51 @@ public class PostRedisReadControllerTest {
 			.andExpect(jsonPath("$.message").value("해당 게시글을 찾을 수 없습니다."))
 			.andDo(print());
 	}
+
+	@Test
+	@DisplayName("조회수 집계 실행 @Scheduled")
+	void view_count_sync_success() {
+		// given
+		Long postId = testPost.getId();
+
+		String key = "post:viewCount:" + postId;
+		readCountRedisTemplate.opsForValue().set(key, 10L);
+
+		// when
+		viewCountSyncService.syncViewCounts();
+		Post result = postRepository.findById(postId).get();
+
+		// then
+		assertEquals(10L, result.getReadCount());
+		assertFalse(readCountRedisTemplate.hasKey(key));
+	}
+
+	// @Test
+	// @DisplayName("조회수 집계 실행 - 동기화 락 획득 실패")
+	// void view_count_sync_lock_fail() throws InterruptedException {
+	// 	// given
+	// 	Long postId = testPost.getId();
+	// 	String key = "post:viewCount:" + postId;
+	// 	readCountRedisTemplate.opsForValue().set(key, 10L);
+	//
+	// 	// when
+	// 	// 동기화 락을 획득하지 못하는 상황을 시뮬레이션하기 위해, 다른 인스턴스에서 락을 획득했다고 가정
+	// 	redissonClient.getLock(ViewCountSyncService.SYNC_LOCK_KEY).tryLock(10, 300, TimeUnit.SECONDS);
+	// 	new Thread(() -> {
+	// 		try {
+	// 			viewCountSyncService.syncViewCounts();
+	// 		} catch (Exception e) {
+	// 			// 예외가 발생하면 테스트가 실패하지 않도록 처리
+	// 			e.printStackTrace();
+	// 		}
+	// 	}).start();
+	// 	//viewCountSyncService.syncViewCounts();
+	// 	Thread.sleep(10000);
+	//
+	// 	// then
+	// 	//assertTrue(readCountRedisTemplate.hasKey(key));
+	// 	assertEquals(10L, readCountRedisTemplate.opsForValue().get(key));
+	// }
+
 
 }

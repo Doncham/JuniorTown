@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.jwt.JWTUtil;
@@ -34,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(RedisTestConfig.class)
+@Import({RedisTestConfig.class,SyncConfig.class})
 class AuthControllerTest {
 	@Autowired
 	private MockMvc mockMvc;

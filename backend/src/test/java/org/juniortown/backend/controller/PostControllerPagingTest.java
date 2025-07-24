@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.like.service.LikeService;
@@ -45,7 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
-@Import(RedisTestConfig.class)
+@Import({RedisTestConfig.class, SyncConfig.class})
 @Transactional
 public class PostControllerPagingTest {
 	@Autowired
