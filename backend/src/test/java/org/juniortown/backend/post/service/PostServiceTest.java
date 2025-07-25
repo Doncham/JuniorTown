@@ -29,6 +29,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ActiveProfiles;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +50,10 @@ class PostServiceTest {
 	private Post post;
 	@Mock
 	private User user;
+	@Mock
+	private RedisTemplate<String, Long> redisTemplate;
+	@Mock
+	private ValueOperations<String, Long> readCountValueOperations;
 
 	@BeforeEach
 	void clear() {
@@ -210,8 +216,9 @@ class PostServiceTest {
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAllWithLikeCount(user.getId(), expectedPageable)).thenReturn(mockPage);
+		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page);
 
 		// then
 		verify(postRepository).findAllWithLikeCount(user.getId(), expectedPageable);
@@ -224,7 +231,7 @@ class PostServiceTest {
 		// 현재 페이지에 들어있는 요소의 개수
 		assertThat(result.getNumberOfElements()).isEqualTo(2);
 
-		List<PostWithLikeCountProjection> content = result.getContent();
+		List<PostResponse> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
 		assertThat(content.get(1).getTitle()).isEqualTo("TB");
@@ -241,7 +248,7 @@ class PostServiceTest {
 		when(postRepository.findAllWithLikeCount(user.getId(),pageable)).thenReturn(emptyPage);
 
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page);
 
 		// then
 		assertThat(result.getContent()).isEmpty();

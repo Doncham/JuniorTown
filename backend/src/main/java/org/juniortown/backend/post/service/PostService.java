@@ -1,6 +1,8 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
@@ -15,9 +17,11 @@ import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +35,9 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final Clock clock;
+	private final RedisTemplate<String, Long> redisTemplate;
 	private final static int PAGE_SIZE = 10;
+
 	@Transactional
 	public PostResponse create(Long userId, PostCreateRequest postCreateRequest) {
 		User user = userRepository.findById(userId)
@@ -39,7 +45,7 @@ public class PostService {
 
 		Post savedPost = postRepository.save(postCreateRequest.toEntity(user));
 
-		return new PostResponse(savedPost);
+		return PostResponse.from(savedPost);
 	}
 
 	@Transactional
@@ -69,13 +75,30 @@ public class PostService {
 
 		post.update(postCreateRequest, clock);
 		log.info("게시글 업데이트 성공: {}", post);
-		return new PostResponse(post);
+		return PostResponse.from(post);
 	}
 	@Transactional(readOnly = true)
-	public Page<PostWithLikeCountProjection> getPosts(Long userId, int page) {
+	public Page<PostResponse> getPosts(Long userId, int page) {
 		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
 		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(userId, pageable);
-		return postPage;
+
+		List<PostResponse> content = postPage.getContent().stream()
+			.map(post -> {
+				Long redisReadCount = redisTemplate.opsForValue().get(ViewCountService.VIEW_COUNT_KEY + post.getId());
+
+				return PostResponse.builder()
+					.id(post.getId())
+					.title(post.getTitle())
+					.userId(post.getUserId())
+					.likeCount(post.getLikeCount())
+					.isLiked(post.getIsLiked())
+					.createdAt(post.getCreatedAt())
+					.updatedAt(post.getUpdatedAt())
+					.readCount(redisReadCount != null ? post.getReadCount() + redisReadCount : post.getReadCount())
+					.build();
+			}).collect(Collectors.toList());
+
+		return new PageImpl<>(content, pageable, postPage.getTotalElements());
 	}
 	@Transactional(readOnly = true)
 	public PostResponse getPost(Long postId) {
@@ -86,6 +109,6 @@ public class PostService {
 			throw new PostNotFoundException();
 		}
 
-		return new PostResponse(post);
+		return PostResponse.from(post);
 	}
 }

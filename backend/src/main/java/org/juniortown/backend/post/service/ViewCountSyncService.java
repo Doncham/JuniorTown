@@ -27,6 +27,7 @@ public class ViewCountSyncService {
 
 	@Scheduled(fixedDelay = 5 * 60 * 1000) // 5분마다 실행
 	public void syncViewCounts() {
+		log.info("ViewCountSyncService.syncViewCounts() - 시작");
 		RLock lock = redissonClient.getLock(SYNC_LOCK_KEY);
 		boolean available = false;
 		try {

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.juniortown.backend.post.entity.Post;
 
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -13,24 +14,40 @@ public class PostResponse {
 	private final String content;
 	private final Long userId;
 	private final String userName;
-	//private final Long likeCount;
+	private final Long likeCount;
 	private Long readCount;
+	private Boolean isLiked;
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
 
-	public PostResponse(Post post) {
-		this.id = post.getId();
-		this.title = post.getTitle();
-		this.content = post.getContent();
-		this.userId = post.getUser().getId();
-		this.userName = post.getUser().getName();
-		// this.likeCount = post.getLikeCount();
-		// 좋아요 수 집계함수로 컬럼으로 만들까?
-		this.readCount = post.getReadCount();
-		this.createdAt = post.getCreatedAt();
-		this.updatedAt = post.getUpdatedAt();
-		this.deletedAt = post.getDeletedAt();
+	@Builder
+	public PostResponse(Long id, String title, String content, Long userId, String userName, Long likeCount,
+			Boolean isLiked, Long readCount, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+		this.id = id;
+		this.title = title;
+		this.content = content;
+		this.userId = userId;
+		this.userName = userName;
+		this.likeCount = likeCount;
+		this.isLiked = isLiked;
+		this.readCount = readCount;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
+		this.deletedAt = deletedAt;
+	}
+	public static PostResponse from(Post post) {
+		return PostResponse.builder()
+			.id(post.getId())
+			.title(post.getTitle())
+			.content(post.getContent())
+			.userId(post.getUser().getId())
+			.userName(post.getUser().getName())
+			.readCount(post.getReadCount())
+			.createdAt(post.getCreatedAt())
+			.updatedAt(post.getUpdatedAt())
+			.deletedAt(post.getDeletedAt())
+			.build();
 	}
 
 	public void addReadCount(Long redisRedaCount) {

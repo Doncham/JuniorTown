@@ -20,9 +20,9 @@ public class ViewCountService {
 	@Qualifier("readCountRedisTemplate")
 	private final RedisTemplate<String, Long> readCountRedisTemplate;
 	// 조회수증분키 형태, post:viewCount:{postId}:{userId}
-	private static final String VIEW_COUNT_KEY = "post:viewCount:";
+	public static final String VIEW_COUNT_KEY = "post:viewCount:";
 	// 중복방지키 형태, postDup:key:{postId}:{userId}
-	private static final String DUP_PREVENT_KEY = "postDup:key:";
+	public static final String DUP_PREVENT_KEY = "postDup:key:";
 
 
 	public Long readCountUp(String userId, String postId) {

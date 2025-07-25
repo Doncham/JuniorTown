@@ -81,8 +81,6 @@ public class PostRedisReadControllerTest {
 
 	@DynamicPropertySource
 	static void overrideProps(DynamicPropertyRegistry registry) {
-		System.out.println("Redis 컨테이너 IP: " + redis.getHost());
-		System.out.println("Redis 컨테이너 포트: " + redis.getMappedPort(6380));
 		registry.add("spring.data.redis.host", redis::getHost);
 		registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort());
 	}
