@@ -144,6 +144,7 @@ const PostListPage = () => {
                   <th>작성일</th>
                   <th>작성자</th>
                   <th>좋아요</th>
+                  <th>조회수</th>
                   <th>액션</th>
                 </tr>
               </thead>
@@ -172,6 +173,7 @@ const PostListPage = () => {
                       </button>
                       <span style={{ fontWeight: 'bold', marginLeft: 4 }}>{post.likeCount}</span>
                     </td>
+                    <td>{post.readCount}</td>
                     <td>
                       <Button size="sm" variant="outline-primary" onClick={() => navigate(`/posts/${post.id}`)}>
                         상세 보기
