@@ -2,15 +2,18 @@ package org.juniortown.backend.post.service;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.juniortown.backend.post.dto.response.PostWithLikeCount;
-import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
-import org.juniortown.backend.post.exception.PostNotFoundException;
+import org.juniortown.backend.like.entity.Like;
+import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
+import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
+import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
@@ -34,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
+	private final LikeRepository likeRepository;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
 	private final static int PAGE_SIZE = 10;
@@ -90,6 +94,7 @@ public class PostService {
 					.id(post.getId())
 					.title(post.getTitle())
 					.userId(post.getUserId())
+					.userName(post.getUsername())
 					.likeCount(post.getLikeCount())
 					.isLiked(post.getIsLiked())
 					.createdAt(post.getCreatedAt())
@@ -101,14 +106,27 @@ public class PostService {
 		return new PageImpl<>(content, pageable, postPage.getTotalElements());
 	}
 	@Transactional(readOnly = true)
-	public PostResponse getPost(Long postId) {
+	public PostDetailResponse getPost(Long postId) {
 		Post post = postRepository.findById(postId)
 			.orElseThrow(() -> new PostNotFoundException());
 		// 삭제된 게시글은 조회할 수 없음, 하드 코딩을 통한 삭제된 게시글을 조회 시도 차단
 		if (post.getDeletedAt() != null) {
 			throw new PostNotFoundException();
 		}
-
-		return PostResponse.from(post);
+		Optional<Like> like = likeRepository.findByUserIdAndPostId(post.getUser().getId(), post.getId());
+		Long likeCount = likeRepository.countByPostId(postId);
+		return PostDetailResponse.builder()
+			.id(post.getId())
+			.title(post.getTitle())
+			.content(post.getContent())
+			.userId(post.getUser().getId())
+			.userName(post.getUser().getName())
+			.likeCount(likeCount)
+			.isLiked(like.isPresent())
+			.readCount(post.getReadCount())
+			.createdAt(post.getCreatedAt())
+			.updatedAt(post.getUpdatedAt())
+			.deletedAt(post.getDeletedAt())
+			.build();
 	}
 }

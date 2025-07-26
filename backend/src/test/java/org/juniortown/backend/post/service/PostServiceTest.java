@@ -7,7 +7,9 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
+import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Post;
@@ -43,6 +45,8 @@ class PostServiceTest {
 	private PostRepository postRepository;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private LikeRepository likeRepository;
 	@Mock
 	private Clock clock;
 
@@ -279,7 +283,7 @@ class PostServiceTest {
 		when(user.getName()).thenReturn(name);
 		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
-		PostResponse result = postService.getPost(postId);
+		PostDetailResponse result = postService.getPost(postId);
 
 		// then
 		assertThat(result.getContent()).isEqualTo(content);

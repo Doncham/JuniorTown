@@ -188,7 +188,14 @@ public class PostRedisReadControllerTest {
 			.andExpect(status().isOk())
 			.andDo(print())
 			.andExpect(jsonPath("$.content").value("테스트 내용"))
-			.andExpect(jsonPath("$.readCount").value(1));
+			.andExpect(jsonPath("$.readCount").value(1))
+			.andExpect(jsonPath("$.userId").value(testUser.getId()))
+			.andExpect(jsonPath("$.userName").value(testUser.getName()))
+			.andExpect(jsonPath("$.isLiked").value(false))
+			.andExpect(jsonPath("$.likeCount").value(0))
+		    .andExpect(jsonPath("$.createdAt").exists())
+			.andExpect(jsonPath("$.updatedAt").exists())
+			.andExpect(jsonPath("$.deletedAt").doesNotExist());
 	}
 
 	@Test

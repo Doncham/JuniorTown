@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PageResponse;
+import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
@@ -70,7 +71,7 @@ public class PostController {
 	}
 
 	@GetMapping("/posts/details/{postId}")
-	public ResponseEntity<PostResponse> getPost(@AuthenticationPrincipal CustomUserDetails customUserDetails
+	public ResponseEntity<PostDetailResponse> getPost(@AuthenticationPrincipal CustomUserDetails customUserDetails
 		,@PathVariable Long postId
 		,@CookieValue(value = "guestId", required = false) String guestId
 	) {
@@ -86,9 +87,9 @@ public class PostController {
 			redisReadCount = viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
 		}
 
-		PostResponse postResponse = postService.getPost(postId);
-		postResponse.addReadCount(redisReadCount);
-		return ResponseEntity.ok(postResponse);
+		PostDetailResponse postDetailResponse = postService.getPost(postId);
+		postDetailResponse.addReadCount(redisReadCount);
+		return ResponseEntity.ok(postDetailResponse);
 	}
 
 }

@@ -6,6 +6,7 @@ import org.juniortown.backend.post.entity.Post;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class PostResponse {
@@ -48,9 +49,5 @@ public class PostResponse {
 			.updatedAt(post.getUpdatedAt())
 			.deletedAt(post.getDeletedAt())
 			.build();
-	}
-
-	public void addReadCount(Long redisRedaCount) {
-		this.readCount += redisRedaCount;
 	}
 }
