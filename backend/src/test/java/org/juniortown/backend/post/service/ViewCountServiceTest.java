@@ -4,23 +4,18 @@ import static org.mockito.Mockito.*;
 
 import java.util.concurrent.TimeUnit;
 
-import org.juniortown.backend.config.RedisTestConfig;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ViewCountServiceTest {
-	@Mock
 	private ViewCountService viewCountService;
 	@Mock
 	private RedisTemplate<String, Boolean> keyCheckRedisTemplate;
@@ -48,10 +43,12 @@ class ViewCountServiceTest {
 		when(keyCheckRedisTemplate.opsForValue()).thenReturn(keyCheckValueOperations);
 		when(readCountRedisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(null);
+		when(readCountValueOperations.get(readCountKey)).thenReturn(1L);
 		// when
-		viewCountService.readCountUp(userId, postId);
+		Long result = viewCountService.readCountUp(userId, postId);
 
 		// then
+		Assertions.assertEquals(1L, result);
 		verify(keyCheckValueOperations).set(eq(dupKey), eq(true), eq(10L), eq(TimeUnit.MINUTES));
 		verify(readCountRedisTemplate.opsForValue()).increment(readCountKey);
 	}
@@ -68,12 +65,14 @@ class ViewCountServiceTest {
 		when(keyCheckRedisTemplate.opsForValue()).thenReturn(keyCheckValueOperations);
 		when(readCountRedisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(true);
-		when(readCountValueOperations.get(readCountKey)).thenReturn(1L);
+		when(readCountValueOperations.get(readCountKey)).thenReturn(0L);
 		// when
-		viewCountService.readCountUp(userId, postId);
+		Long result = viewCountService.readCountUp(userId, postId);
 
 		// then
+		Assertions.assertEquals(0L, result);
 		verify(keyCheckValueOperations, never()).set(eq(dupKey), eq(true), eq(10L), eq(TimeUnit.MINUTES));
+		verify(readCountValueOperations, never()).increment(readCountKey);
 		verify(readCountRedisTemplate.opsForValue()).get(readCountKey);
 	}
 }

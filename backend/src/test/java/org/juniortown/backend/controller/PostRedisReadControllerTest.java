@@ -45,6 +45,8 @@ import org.testcontainers.utility.DockerImageName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 
+import jakarta.servlet.http.Cookie;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 //@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
@@ -126,12 +128,6 @@ public class PostRedisReadControllerTest {
 			});
 	}
 
-	// @AfterEach
-	// void clean() {
-	// 	userRepository.deleteAll();
-	// 	postRepository.deleteAll();
-	// }
-
 	@Test
 	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
 	void read_count_increase_with_user() throws Exception {
@@ -158,12 +154,13 @@ public class PostRedisReadControllerTest {
 
 
 	@Test
-	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
+	@DisplayName("게시글 조회수 증가 성공(비회원) - 중복키 존재 x")
 	void read_count_increase_with_non_user() throws Exception {
 		Long postId = testPost.getId();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 				.contentType(APPLICATION_JSON)
+				.cookie(new Cookie("guestId", "testUUId"))
 			)
 			.andExpect(status().isOk())
 			.andDo(print())
@@ -205,6 +202,7 @@ public class PostRedisReadControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 			.contentType(APPLICATION_JSON)
+
 		).andReturn();
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
@@ -224,6 +222,7 @@ public class PostRedisReadControllerTest {
 		// 비회원 조회
 		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
 			.contentType(APPLICATION_JSON)
+			.cookie(new Cookie("guestId", "testUUId"))
 		).andReturn();
 
 		// 회원 조회

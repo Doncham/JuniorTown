@@ -48,6 +48,8 @@ class PostServiceTest {
 	@Mock
 	private LikeRepository likeRepository;
 	@Mock
+	private ViewCountService viewCountService;
+	@Mock
 	private Clock clock;
 
 	@Mock
@@ -283,7 +285,7 @@ class PostServiceTest {
 		when(user.getName()).thenReturn(name);
 		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
-		PostDetailResponse result = postService.getPost(postId);
+		PostDetailResponse result = postService.getPost(postId, String.valueOf(userId));
 
 		// then
 		assertThat(result.getContent()).isEqualTo(content);
@@ -297,12 +299,13 @@ class PostServiceTest {
 	void getPost_not_return_deleted_page() {
 		// given
 		Long postId = 999L;
+		String userId = "1";
 
 		// when
 		when(postRepository.findById(anyLong())).thenReturn(Optional.empty());
 
 		// then
-		assertThatThrownBy(() -> postService.getPost(postId))
+		assertThatThrownBy(() -> postService.getPost(postId, userId))
 			.isInstanceOf(PostNotFoundException.class)
 			.hasMessage("해당 게시글을 찾을 수 없습니다.");
 	}

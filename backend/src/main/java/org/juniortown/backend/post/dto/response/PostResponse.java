@@ -16,8 +16,8 @@ public class PostResponse {
 	private final Long userId;
 	private final String userName;
 	private final Long likeCount;
-	private Long readCount;
-	private Boolean isLiked;
+	private final Long readCount;
+	private final Boolean isLiked;
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
@@ -44,6 +44,8 @@ public class PostResponse {
 			.content(post.getContent())
 			.userId(post.getUser().getId())
 			.userName(post.getUser().getName())
+			.likeCount(0L) // 기본값 넣어주기
+			.isLiked(false) // 기본값 넣어주기
 			.readCount(post.getReadCount())
 			.createdAt(post.getCreatedAt())
 			.updatedAt(post.getUpdatedAt())

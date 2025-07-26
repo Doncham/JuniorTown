@@ -39,12 +39,15 @@ public class ViewCountSyncService {
 			Set<String> keys = redisTemplate.keys("post:viewCount:*");
 			if(keys == null) return;
 			for (String key : keys) {
-				Long postId = Long.valueOf(key.split(":")[2]);
+				//Long postId = Long.valueOf(key.split(":")[2]);
+				Long postId = getPostIdFromKey(key);
+				if (postId == null)
+					continue;
 				Long count = redisTemplate.opsForValue().get(key);
 				if(count == null || count == 0) continue;
 
 				postRepository.findById(postId).ifPresent(post -> {
-					post.addReadCount(post.getReadCount() + count);
+					post.addReadCount(count);
 				});
 				redisTemplate.delete(key);
 			}
@@ -54,5 +57,21 @@ public class ViewCountSyncService {
 		} finally {
 			if(available) lock.unlock();
 		}
+	}
+
+	private Long getPostIdFromKey(String key) {
+		String[] parts = key.split(":");
+		if (parts.length < 3) {
+			log.warn("잘못된 키 형식: {}", key);
+			return null;
+		}
+		Long postId;
+		try {
+			postId = Long.valueOf(parts[2]);
+		} catch (NumberFormatException e) {
+			log.warn("키에서 postId를 추출할 수 없습니다: {}", key);
+			return null;
+		}
+		return postId;
 	}
 }

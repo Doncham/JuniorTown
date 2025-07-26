@@ -75,20 +75,8 @@ public class PostController {
 		,@PathVariable Long postId
 		,@CookieValue(value = "guestId", required = false) String guestId
 	) {
-		Long redisReadCount = 0L;
-		if(customUserDetails == null) {
-			// 비회원인 경우
-			// 쿠키값을 레디스에 등록
-			redisReadCount = viewCountService.readCountUp(guestId, String.valueOf(postId));
-		} else {
-			// 회원인 경우
-			// userId,postId를 조합해서 레디스에 등록
-			Long userId = customUserDetails.getUserId();
-			redisReadCount = viewCountService.readCountUp(String.valueOf(userId), String.valueOf(postId));
-		}
-
-		PostDetailResponse postDetailResponse = postService.getPost(postId);
-		postDetailResponse.addReadCount(redisReadCount);
+		String viewerId = customUserDetails != null ? String.valueOf(customUserDetails.getUserId()) : guestId;
+		PostDetailResponse postDetailResponse = postService.getPost(postId, viewerId);
 		return ResponseEntity.ok(postDetailResponse);
 	}
 

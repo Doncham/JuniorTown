@@ -7,17 +7,17 @@ import lombok.Getter;
 
 @Getter
 public class PostDetailResponse {
-	private Long id;
-	private String title;
-	private String content;
-	private Long userId;
-	private String userName;
-	private Long likeCount;
-	private Boolean isLiked;
-	private Long readCount;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
-	private LocalDateTime deletedAt;
+	private final Long id;
+	private final String title;
+	private final String content;
+	private final Long userId;
+	private final String userName;
+	private final Long likeCount;
+	private final Boolean isLiked;
+	private final Long readCount;
+	private final LocalDateTime createdAt;
+	private final LocalDateTime updatedAt;
+	private final LocalDateTime deletedAt;
 
 	@Builder
 	public PostDetailResponse(Long id, String title, String content, Long userId, String userName, Long likeCount,
@@ -48,8 +48,5 @@ public class PostDetailResponse {
 			.updatedAt(postResponse.getUpdatedAt())
 			.deletedAt(postResponse.getDeletedAt())
 			.build();
-	}
-	public void addReadCount(Long redisReadCount) {
-		this.readCount += redisReadCount;
 	}
 }

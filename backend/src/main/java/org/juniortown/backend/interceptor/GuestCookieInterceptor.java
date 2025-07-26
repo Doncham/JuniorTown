@@ -28,7 +28,8 @@ public class GuestCookieInterceptor implements HandlerInterceptor {
 			String guestId = UUID.randomUUID().toString();
 			Cookie cookie = new Cookie(COOKIE_NAME, guestId);
 			cookie.setPath("/");
-			cookie.setMaxAge(60 * 60 * 24 * 365); // 1 year
+			cookie.setMaxAge(60 * 60 * 24 * 15); // 15 days
+			cookie.setHttpOnly(true);
 			response.addCookie(cookie);
 		}
 		return true;

@@ -38,6 +38,7 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final LikeRepository likeRepository;
+	private final ViewCountService viewCountService;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
 	private final static int PAGE_SIZE = 10;
@@ -106,15 +107,20 @@ public class PostService {
 		return new PageImpl<>(content, pageable, postPage.getTotalElements());
 	}
 	@Transactional(readOnly = true)
-	public PostDetailResponse getPost(Long postId) {
+	public PostDetailResponse getPost(Long postId, String viewerId) {
 		Post post = postRepository.findById(postId)
 			.orElseThrow(() -> new PostNotFoundException());
 		// 삭제된 게시글은 조회할 수 없음, 하드 코딩을 통한 삭제된 게시글을 조회 시도 차단
 		if (post.getDeletedAt() != null) {
 			throw new PostNotFoundException();
 		}
-		Optional<Like> like = likeRepository.findByUserIdAndPostId(post.getUser().getId(), post.getId());
+		boolean isMember = isLong(viewerId);
+		Optional<Like> like = Optional.empty();
+		if(isMember) {
+			like = likeRepository.findByUserIdAndPostId(Long.valueOf(viewerId), post.getId());
+		}
 		Long likeCount = likeRepository.countByPostId(postId);
+		Long redisReadCount = viewCountService.readCountUp(viewerId, postId.toString());
 		return PostDetailResponse.builder()
 			.id(post.getId())
 			.title(post.getTitle())
@@ -123,10 +129,19 @@ public class PostService {
 			.userName(post.getUser().getName())
 			.likeCount(likeCount)
 			.isLiked(like.isPresent())
-			.readCount(post.getReadCount())
+			.readCount(post.getReadCount() + redisReadCount)
 			.createdAt(post.getCreatedAt())
 			.updatedAt(post.getUpdatedAt())
 			.deletedAt(post.getDeletedAt())
 			.build();
+	}
+
+	private boolean isLong(String str) {
+		try {
+			Long.parseLong(str);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
 	}
 }
