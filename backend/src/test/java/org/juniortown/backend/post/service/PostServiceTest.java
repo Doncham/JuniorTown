@@ -252,6 +252,7 @@ class PostServiceTest {
 		Page<PostWithLikeCountProjection> emptyPage = Page.empty(pageable);
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAllWithLikeCount(user.getId(),pageable)).thenReturn(emptyPage);
+		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 
 		// when
 		Page<PostResponse> result = postService.getPosts(user.getId(), page);

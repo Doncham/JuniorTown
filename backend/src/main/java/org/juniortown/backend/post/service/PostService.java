@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
@@ -87,10 +88,14 @@ public class PostService {
 		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
 		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(userId, pageable);
 
-		List<PostResponse> content = postPage.getContent().stream()
-			.map(post -> {
-				Long redisReadCount = redisTemplate.opsForValue().get(ViewCountService.VIEW_COUNT_KEY + post.getId());
+		List<Long> redisReadCounts = getReadCountFromRedisCache(postPage);
 
+		List<PostResponse> content = IntStream.range(0, postPage.getContent().size())
+			.mapToObj(i -> {
+				PostWithLikeCountProjection post = postPage.getContent().get(i);
+				Long redisReadCount = (redisReadCounts.size() > i && redisReadCounts.get(i) != null)
+					? redisReadCounts.get(i)
+					: 0L;
 				return PostResponse.builder()
 					.id(post.getId())
 					.title(post.getTitle())
@@ -100,12 +105,22 @@ public class PostService {
 					.isLiked(post.getIsLiked())
 					.createdAt(post.getCreatedAt())
 					.updatedAt(post.getUpdatedAt())
-					.readCount(redisReadCount != null ? post.getReadCount() + redisReadCount : post.getReadCount())
+					.readCount(post.getReadCount() + redisReadCount)
 					.build();
-			}).collect(Collectors.toList());
+			})
+			.collect(Collectors.toList());
 
 		return new PageImpl<>(content, pageable, postPage.getTotalElements());
 	}
+
+	private List<Long> getReadCountFromRedisCache(Page<PostWithLikeCountProjection> postPage) {
+		List<String> keys = postPage.getContent().stream()
+			.map(post -> ViewCountService.VIEW_COUNT_KEY + post.getId())
+			.collect(Collectors.toList());
+		List<Long> redisReadCounts = redisTemplate.opsForValue().multiGet(keys);
+		return redisReadCounts;
+	}
+
 	@Transactional(readOnly = true)
 	public PostDetailResponse getPost(Long postId, String viewerId) {
 		Post post = postRepository.findById(postId)
