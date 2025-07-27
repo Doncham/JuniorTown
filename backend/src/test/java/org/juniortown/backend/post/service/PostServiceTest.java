@@ -7,7 +7,9 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
+import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Post;
@@ -29,6 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ActiveProfiles;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,12 +46,20 @@ class PostServiceTest {
 	@Mock
 	private UserRepository userRepository;
 	@Mock
+	private LikeRepository likeRepository;
+	@Mock
+	private ViewCountService viewCountService;
+	@Mock
 	private Clock clock;
 
 	@Mock
 	private Post post;
 	@Mock
 	private User user;
+	@Mock
+	private RedisTemplate<String, Long> redisTemplate;
+	@Mock
+	private ValueOperations<String, Long> readCountValueOperations;
 
 	@BeforeEach
 	void clear() {
@@ -210,8 +222,9 @@ class PostServiceTest {
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAllWithLikeCount(user.getId(), expectedPageable)).thenReturn(mockPage);
+		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page);
 
 		// then
 		verify(postRepository).findAllWithLikeCount(user.getId(), expectedPageable);
@@ -224,7 +237,7 @@ class PostServiceTest {
 		// 현재 페이지에 들어있는 요소의 개수
 		assertThat(result.getNumberOfElements()).isEqualTo(2);
 
-		List<PostWithLikeCountProjection> content = result.getContent();
+		List<PostResponse> content = result.getContent();
 		assertThat(content).hasSize(2);
 		assertThat(content.get(0).getTitle()).isEqualTo("TA");
 		assertThat(content.get(1).getTitle()).isEqualTo("TB");
@@ -239,9 +252,10 @@ class PostServiceTest {
 		Page<PostWithLikeCountProjection> emptyPage = Page.empty(pageable);
 		when(user.getId()).thenReturn(1L);
 		when(postRepository.findAllWithLikeCount(user.getId(),pageable)).thenReturn(emptyPage);
+		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 
 		// when
-		Page<PostWithLikeCountProjection> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page);
 
 		// then
 		assertThat(result.getContent()).isEmpty();
@@ -272,7 +286,7 @@ class PostServiceTest {
 		when(user.getName()).thenReturn(name);
 		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
 
-		PostResponse result = postService.getPost(postId);
+		PostDetailResponse result = postService.getPost(postId, String.valueOf(userId));
 
 		// then
 		assertThat(result.getContent()).isEqualTo(content);
@@ -286,12 +300,13 @@ class PostServiceTest {
 	void getPost_not_return_deleted_page() {
 		// given
 		Long postId = 999L;
+		String userId = "1";
 
 		// when
 		when(postRepository.findById(anyLong())).thenReturn(Optional.empty());
 
 		// then
-		assertThatThrownBy(() -> postService.getPost(postId))
+		assertThatThrownBy(() -> postService.getPost(postId, userId))
 			.isInstanceOf(PostNotFoundException.class)
 			.hasMessage("해당 게시글을 찾을 수 없습니다.");
 	}

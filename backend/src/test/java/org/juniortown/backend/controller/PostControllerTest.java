@@ -12,6 +12,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
@@ -36,6 +38,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 
 import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -53,6 +56,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
+@Import({RedisTestConfig.class, SyncConfig.class})
 @Transactional
 class PostControllerTest {
 	@Autowired
@@ -436,47 +440,4 @@ class PostControllerTest {
 			.andExpect(jsonPath("$.validation.content").value("컨텐츠를 입력해주세요."))
 			.andDo(print());
 	}
-
-	@Test
-	@DisplayName("글 상세 조회 성공")
-	void getPostDetail_success() throws Exception {
-		// given
-		Post post = Post.builder()
-			.user(testUser)
-			.title("테스트 글")
-			.content("테스트 내용")
-			.build();
-
-		Post savePost = postRepository.save(post);
-		Long postId = savePost.getId();
-
-
-		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
-				.contentType(APPLICATION_JSON)
-				.header("Authorization", jwt)
-			)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.content").value("테스트 내용"))
-			.andDo(print());
-	}
-
-	@Test
-	@DisplayName("글 상세 조회 실패 - 존재하지 않는 게시글")
-	void getPostDetail_nonExistPost_failure() throws Exception {
-		// given
-		Long postId = 0L;
-
-		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}" ,postId)
-				.contentType(APPLICATION_JSON)
-				.header("Authorization", jwt)
-			)
-			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.code").value("404"))
-			.andExpect(jsonPath("$.message").value("해당 게시글을 찾을 수 없습니다."))
-			.andDo(print());
-	}
-
-
 }

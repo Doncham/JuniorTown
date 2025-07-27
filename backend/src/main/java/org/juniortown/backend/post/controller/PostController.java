@@ -1,16 +1,21 @@
 package org.juniortown.backend.post.controller;
 
+import java.util.stream.Collectors;
+
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PageResponse;
+import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.service.PostService;
+import org.juniortown.backend.post.service.ViewCountService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class PostController {
 	private final PostService postService;
+	private final ViewCountService viewCountService;
 	@PostMapping("/posts")
 	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@Valid @RequestBody PostCreateRequest postCreateRequest) {
@@ -55,19 +61,23 @@ public class PostController {
 
 	// 게시글 목록 조회, 페이지네이션 적용
 	@GetMapping("/posts/{page}")
-	public ResponseEntity<PageResponse<PostWithLikeCountProjection>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable int page) {
+	public ResponseEntity<PageResponse<PostResponse>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable int page) {
 		Long userId = customUserDetails.getUserId();
 		// null체크
 
-	 	Page<PostWithLikeCountProjection> posts = postService.getPosts(userId, page);
-		PageResponse<PostWithLikeCountProjection> response = new PageResponse<>(posts);
+	 	Page<PostResponse> posts = postService.getPosts(userId, page);
+		PageResponse<PostResponse> response = new PageResponse<>(posts);
 		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/posts/details/{postId}")
-	public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
-		PostResponse postResponse = postService.getPost(postId);
-		return ResponseEntity.ok(postResponse);
+	public ResponseEntity<PostDetailResponse> getPost(@AuthenticationPrincipal CustomUserDetails customUserDetails
+		,@PathVariable Long postId
+		,@CookieValue(value = "guestId", required = false) String guestId
+	) {
+		String viewerId = customUserDetails != null ? String.valueOf(customUserDetails.getUserId()) : guestId;
+		PostDetailResponse postDetailResponse = postService.getPost(postId, viewerId);
+		return ResponseEntity.ok(postDetailResponse);
 	}
 
 }

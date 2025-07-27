@@ -9,6 +9,8 @@ import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
+import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.like.service.LikeService;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,6 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
+@Import({RedisTestConfig.class, SyncConfig.class})
 @Transactional
 public class PostControllerPagingTest {
 	@Autowired
@@ -136,6 +140,15 @@ public class PostControllerPagingTest {
 			.andExpect(jsonPath("$.hasPrevious").value(false))
 			.andExpect(jsonPath("$.hasNext").value(true)) // 다음 페이지 있음
 			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
+			.andExpect(jsonPath("$.content[0].id").value(53))
+			.andExpect(jsonPath("$.content[0].title").value("테스트 글 53")) // 첫 번째 게시글 제목
+			.andExpect(jsonPath("$.content[0].userId").value(testUser1.getId())) // 첫 번째 게시글 작성자 ID
+			.andExpect(jsonPath("$.content[0].userName").value(testUser1.getName())) // 첫 번째 게시글 작성자 이름
+			.andExpect(jsonPath("$.content[0].likeCount").value(0)) // 첫 번째 게시글 좋아요 수
+			.andExpect(jsonPath("$.content[0].readCount").value(0)) // 첫 번째 게시글 조회수
+			.andExpect(jsonPath("$.content[0].createdAt").exists()) // 첫 번째 게시글 생성일시
+			.andExpect(jsonPath("$.content[0].updatedAt").exists()) // 첫 번째 게시글 수정일시
+			.andExpect(jsonPath("$.content[0].isLiked").value(false)) // 첫 번째 게시글 좋아요 여부
 			.andDo(print());
 	}
 

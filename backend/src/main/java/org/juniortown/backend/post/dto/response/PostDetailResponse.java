@@ -2,28 +2,25 @@ package org.juniortown.backend.post.dto.response;
 
 import java.time.LocalDateTime;
 
-import org.juniortown.backend.post.entity.Post;
-
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-public class PostResponse {
+public class PostDetailResponse {
 	private final Long id;
 	private final String title;
 	private final String content;
 	private final Long userId;
 	private final String userName;
 	private final Long likeCount;
-	private final Long readCount;
 	private final Boolean isLiked;
+	private final Long readCount;
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
 
 	@Builder
-	public PostResponse(Long id, String title, String content, Long userId, String userName, Long likeCount,
+	public PostDetailResponse(Long id, String title, String content, Long userId, String userName, Long likeCount,
 			Boolean isLiked, Long readCount, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
 		this.id = id;
 		this.title = title;
@@ -37,19 +34,19 @@ public class PostResponse {
 		this.updatedAt = updatedAt;
 		this.deletedAt = deletedAt;
 	}
-	public static PostResponse from(Post post) {
-		return PostResponse.builder()
-			.id(post.getId())
-			.title(post.getTitle())
-			.content(post.getContent())
-			.userId(post.getUser().getId())
-			.userName(post.getUser().getName())
-			.likeCount(0L) // 기본값 넣어주기
-			.isLiked(false) // 기본값 넣어주기
-			.readCount(post.getReadCount())
-			.createdAt(post.getCreatedAt())
-			.updatedAt(post.getUpdatedAt())
-			.deletedAt(post.getDeletedAt())
+	public static PostDetailResponse from(PostResponse postResponse) {
+		return PostDetailResponse.builder()
+			.id(postResponse.getId())
+			.title(postResponse.getTitle())
+			.content(postResponse.getContent())
+			.userId(postResponse.getUserId())
+			.userName(postResponse.getUserName())
+			.likeCount(postResponse.getLikeCount())
+			.isLiked(postResponse.getIsLiked())
+			.readCount(postResponse.getReadCount())
+			.createdAt(postResponse.getCreatedAt())
+			.updatedAt(postResponse.getUpdatedAt())
+			.deletedAt(postResponse.getDeletedAt())
 			.build();
 	}
 }

@@ -40,6 +40,9 @@ public class Post extends BaseTimeEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
+	@Column(name = "read_count", nullable = false)
+	private Long readCount = 0L;
+
 	@Builder
 	public Post(String title, String content, User user) {
 		this.title = title;
@@ -49,11 +52,14 @@ public class Post extends BaseTimeEntity {
 
 	public void softDelete(Clock clock) {
 		this.deletedAt = LocalDateTime.now(clock);
-
 	}
 
 	public void update(PostCreateRequest postCreateRequest, Clock clock) {
 		this.title = postCreateRequest.getTitle();
 		this.content = postCreateRequest.getContent();
+	}
+
+	public void addReadCount(Long redisReadCount) {
+		this.readCount += redisReadCount;
 	}
 }

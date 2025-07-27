@@ -111,6 +111,9 @@ const PostDetailPage = () => {
                     minute: "2-digit",
                   })}
                 </small>
+                <small className="text-muted ms-2">
+                  👁️ {post.readCount?.toLocaleString()}회
+                </small>
               </Card.Header>
               <Card.Body>
                 <Card.Text style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
