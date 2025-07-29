@@ -33,7 +33,7 @@ public class CommentCreateResponse {
 			.postId(comment.getPost().getId())
 			.parentId(comment.getParent() != null ? comment.getParent().getId() : null)
 			.userId(comment.getUser().getId())
-			.username(comment.getUsername())
+			.username(comment.getUser().getName())
 			.createdAt(comment.getCreatedAt())
 			.build();
 	}

@@ -61,7 +61,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 class PostControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
-
 	@Autowired
 	private PostRepository postRepository;
 	@Autowired
@@ -72,11 +71,6 @@ class PostControllerTest {
 	private AuthService authService;
 	@Autowired
 	private JWTUtil jwtUtil;
-
-	@BeforeEach
-	void clean() {
-		postRepository.deleteAll();
-	}
 
 	private static String jwt;
 	private User testUser;

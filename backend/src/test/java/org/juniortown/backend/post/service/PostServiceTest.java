@@ -61,11 +61,6 @@ class PostServiceTest {
 	@Mock
 	private ValueOperations<String, Long> readCountValueOperations;
 
-	@BeforeEach
-	void clear() {
-		postRepository.deleteAll();
-	}
-
 	@Test
 	@DisplayName("게시글 생성 성공")
 	void createPost_success() {

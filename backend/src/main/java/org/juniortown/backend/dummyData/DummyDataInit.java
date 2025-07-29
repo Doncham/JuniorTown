@@ -7,12 +7,14 @@ import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+@Profile("default")
 public class DummyDataInit implements CommandLineRunner {
 	private final UserRepository userRepository;
 	private final PostRepository postRepository;
