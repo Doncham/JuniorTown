@@ -1,6 +1,5 @@
 package org.juniortown.backend.comment.service;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
@@ -11,9 +10,9 @@ import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
+import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
-import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
@@ -50,6 +49,7 @@ class CommentServiceTest {
 	static final Long POST_ID = 1L;
 	static final Long COMMENT_ID = 5L;
 	static final String USERNAME = "testUser";
+
 
 	@Test
 	@DisplayName("댓글 생성 성공 테스트")
@@ -157,6 +157,7 @@ class CommentServiceTest {
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(ParentPostMismatchException.class)
 			.hasMessage("부모 댓글의 게시글과 대댓글이 속한 게시글이 일치하지 않습니다.");
+		verify(commentRepository, never()).save(any(Comment.class));
 	}
 
 	@Test
@@ -177,6 +178,7 @@ class CommentServiceTest {
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(UserNotFoundException.class)
 			.hasMessage("해당 사용자를 찾을 수 없습니다.");
+		verify(commentRepository, never()).save(any(Comment.class));
 	}
 	@Test
 	@DisplayName("댓글 생성 실패 테스트 - 게시글 존재하지 않음")
@@ -196,6 +198,7 @@ class CommentServiceTest {
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(UserNotFoundException.class)
 			.hasMessage("해당 사용자를 찾을 수 없습니다.");
+		verify(commentRepository, never()).save(any(Comment.class));
 	}
 
 	@Test
@@ -218,6 +221,75 @@ class CommentServiceTest {
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(CommentNotFoundException.class)
 			.hasMessage("해당 댓글을 찾을 수 없습니다.");
+		verify(commentRepository, never()).save(any(Comment.class));
+	}
 
+	@Test
+	@DisplayName("댓글 삭제 성공 테스트")
+	void delete_comment_success() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+		when(comment.getUser()).thenReturn(user);
+		when(user.getId()).thenReturn(userId);
+
+		// when
+		commentService.deleteComment(userId, commentId);
+
+		// then
+		verify(comment).softDelete(any(Clock.class));
+	}
+	@Test
+	@DisplayName("댓글 삭제 실패 테스트 - 사용자가 존재하지 않음")
+	void delete_comment_fail_by_no_user() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+
+		when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.deleteComment(userId, commentId))
+			.isInstanceOf(UserNotFoundException.class)
+			.hasMessage(UserNotFoundException.MESSAGE);
+		verify(commentRepository, never()).findById(commentId);
+	}
+
+	@Test
+	@DisplayName("댓글 삭제 실패 테스트 - 게시글이 존재하지 않음")
+	void delete_comment_fail_by_no_comment() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.deleteComment(userId, commentId))
+			.isInstanceOf(CommentNotFoundException.class)
+			.hasMessage(CommentNotFoundException.MESSAGE);
+		verify(comment, never()).softDelete(any(Clock.class));
+	}
+	@Test
+	@DisplayName("댓글 삭제 실패 테스트 - 사용자가 댓글을 작성한 사용자가 아님")
+	void delete_comment_fail_by_no_right_for_delete() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+		when(comment.getUser()).thenReturn(mock(User.class));
+		when(comment.getUser().getId()).thenReturn(3L); // 다른 사용자
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.deleteComment(userId, commentId))
+			.isInstanceOf(NoRightForCommentDeleteException.class)
+			.hasMessage(NoRightForCommentDeleteException.MESSAGE);
+		verify(comment, never()).softDelete(any(Clock.class));
 	}
 }

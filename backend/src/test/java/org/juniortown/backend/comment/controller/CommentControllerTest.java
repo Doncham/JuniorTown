@@ -4,17 +4,26 @@ import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.assertj.core.api.Assertions;
 import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
 import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.exception.CommentNotFoundException;
+import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
+import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
+import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.post.entity.Post;
+import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
+import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
@@ -38,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
-@Import({RedisTestConfig.class, SyncConfig.class})
+@Import({RedisTestConfig.class, SyncConfig.class, TestClockConfig.class})
 @Transactional
 class CommentControllerTest {
 	@Autowired
@@ -55,11 +64,15 @@ class CommentControllerTest {
 	private AuthService authService;
 	@Autowired
 	private JWTUtil jwtUtil;
+	@Autowired
+	private Clock clock;
 	private static String jwt;
 	private User testUser;
 	private Post post;
 
 	private final static Long ID_NOT_EXIST = 999999L;
+	private final static String COMMENT_CONTENT_NOT_EMPTY = "댓글 내용을 입력해주세요.";
+	private final static String POST_ID_NOT_EMPTY = "게시글 ID를 입력해주세요.";
 
 	@BeforeAll
 	public void init() throws Exception {
@@ -172,7 +185,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.message").value("해당 게시글을 찾을 수 없습니다."))
+			.andExpect(jsonPath("$.message").value(PostNotFoundException.MESSAGE))
 			.andDo(print());
 	}
 
@@ -192,7 +205,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.message").value("해당 사용자를 찾을 수 없습니다."))
+			.andExpect(jsonPath("$.message").value(UserNotFoundException.MESSAGE))
 			.andDo(print());
 	}
 
@@ -226,7 +239,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message").value("부모 댓글의 게시글과 대댓글이 속한 게시글이 일치하지 않습니다."))
+			.andExpect(jsonPath("$.message").value(ParentPostMismatchException.MESSAGE))
 			.andDo(print());
 	}
 
@@ -253,7 +266,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isNotFound())
-			.andExpect(jsonPath("$.message").value("해당 댓글을 찾을 수 없습니다."))
+			.andExpect(jsonPath("$.message").value(CommentNotFoundException.MESSAGE))
 			.andDo(print());
 	}
 
@@ -272,7 +285,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.validation.content").value("댓글 내용을 입력해주세요."))
+			.andExpect(jsonPath("$.validation.content").value(COMMENT_CONTENT_NOT_EMPTY))
 			.andDo(print());
 	}
 
@@ -291,7 +304,93 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentRequest))
 			)
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.validation.postId").value("게시글 ID를 입력해주세요."))
+			.andExpect(jsonPath("$.validation.postId").value(POST_ID_NOT_EMPTY))
+			.andDo(print());
+	}
+	@Test
+	@DisplayName("댓글 삭제 성공")
+	void delete_comment_success() throws Exception {
+		// given
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		comment = commentRepository.save(comment);
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", comment.getId())
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNoContent())
+			.andDo(print());
+
+		Comment savedComment = commentRepository.findById(comment.getId()).get();
+		Assertions.assertThat(savedComment.getDeletedAt()).isEqualTo(LocalDateTime.now(clock));
+	}
+
+	@Test
+	@DisplayName("댓글 삭제 실패 - 유저가 존재하지 않음")
+	void delete_comment_fail_with_no_user() throws Exception {
+		// given
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		comment = commentRepository.save(comment);
+		userRepository.deleteById(testUser.getId()); // 유저 삭제
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", comment.getId())
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.message").value(UserNotFoundException.MESSAGE))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("댓글 삭제 실패 - 댓글이 존재하지 않음")
+	void delete_comment_fail_with_no_comment() throws Exception {
+		// given
+		Long nonExistentCommentId = ID_NOT_EXIST;
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", nonExistentCommentId)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.message").value(CommentNotFoundException.MESSAGE))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("댓글 삭제 실패 - 유저가 댓글을 삭제할 권한이 없음")
+	void delete_comment_fail_with_no_right_for_deletion() throws Exception {
+		User otherUser = User.builder()
+			.name("댓글 주인")
+			.email("comment@email.com")
+			.password("1234")
+			.build();
+		User CommentOwner = userRepository.save(otherUser);
+
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(CommentOwner)
+			.username(CommentOwner.getName())
+			.build();
+		comment = commentRepository.save(comment);
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", comment.getId())
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.message").value(NoRightForCommentDeleteException.MESSAGE))
 			.andDo(print());
 	}
 }
