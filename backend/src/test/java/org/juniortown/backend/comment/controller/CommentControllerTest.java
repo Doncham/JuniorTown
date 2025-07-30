@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.assertj.core.api.Assertions;
 import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
+import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
@@ -41,6 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -393,4 +395,110 @@ class CommentControllerTest {
 			.andExpect(jsonPath("$.message").value(NoRightForCommentDeleteException.MESSAGE))
 			.andDo(print());
 	}
+
+	@Test
+	@DisplayName("댓글 수정 성공")
+	void comment_update_success() throws Exception {
+		// given
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		comment = commentRepository.save(comment);
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("수정된 댓글 내용")
+			.build();
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.patch("/api/comments/{commentId}", comment.getId())
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentUpdateRequest))
+			)
+			.andExpect(status().isNoContent())
+			.andDo(print());
+		Comment savedComment = commentRepository.findById(comment.getId()).get();
+		Assertions.assertThat(savedComment.getUpdatedAt()).isEqualTo(LocalDateTime.now(clock));
+		Assertions.assertThat(savedComment.getContent()).isEqualTo("수정된 댓글 내용");
+	}
+
+	@Test
+	@DisplayName("댓글 수정 실패 - 유저가 존재하지 않음")
+	void comment_update_fail_with_no_user() throws Exception {
+		// given
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		comment = commentRepository.save(comment);
+		userRepository.deleteById(testUser.getId()); // 유저 삭제
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("수정된 댓글 내용")
+			.build();
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.patch("/api/comments/{commentId}", comment.getId())
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentUpdateRequest))
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.message").value(UserNotFoundException.MESSAGE))
+			.andDo(print());
+	}
+	@Test
+	@DisplayName("댓글 수정 실패 - 댓글이 존재하지 않음")
+	void comment_update_fail_with_no_comment() throws Exception {
+		// given
+		Long nonExistentCommentId = ID_NOT_EXIST;
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("수정된 댓글 내용")
+			.build();
+
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.patch("/api/comments/{commentId}", nonExistentCommentId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentUpdateRequest))
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.message").value(CommentNotFoundException.MESSAGE))
+			.andDo(print());
+	}
+
+	@Test
+	@DisplayName("댓글 수정 실패 - 유저가 댓글을 수정할 권한이 없음")
+	void update_comment_fail_with_no_right_for_delete() throws Exception {
+		// given
+		User ownerUser = User.builder()
+			.name("진정한 댓글의 주인")
+			.password("1234")
+			.email("owner@email.com")
+			.build();
+		User commentOwner = userRepository.save(ownerUser);
+		Comment comment = Comment.builder()
+			.content("테스트 댓글")
+			.post(post)
+			.user(ownerUser)
+			.username(testUser.getName())
+			.build();
+		comment = commentRepository.save(comment);
+
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("수정된 댓글 내용")
+			.build();
+		// when then
+		mockMvc.perform(MockMvcRequestBuilders.patch("/api/comments/{commentId}", comment.getId())
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentUpdateRequest))
+			)
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.message").value(NoRightForCommentDeleteException.MESSAGE))
+			.andDo(print());
+	}
+
 }

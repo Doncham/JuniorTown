@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
 import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
+import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
@@ -292,4 +293,86 @@ class CommentServiceTest {
 			.hasMessage(NoRightForCommentDeleteException.MESSAGE);
 		verify(comment, never()).softDelete(any(Clock.class));
 	}
+	@Test
+	@DisplayName("댓글 수정 성공 테스트")
+	void update_comment_success() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+		String newContent = "Updated comment content";
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content(newContent)
+			.build();
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+		when(comment.getUser()).thenReturn(user);
+		when(user.getId()).thenReturn(userId);
+
+		// when
+		commentService.updateComment(userId, commentId, commentUpdateRequest);
+
+		// then
+		verify(comment).update(any(CommentUpdateRequest.class), any(Clock.class));
+	}
+	@Test
+	@DisplayName("댓글 수정 실패 테스트 - 사용자가 존재하지 않음")
+	void update_comment_fail_by_no_user() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("Updated comment content")
+			.build();
+
+		when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.updateComment(userId, commentId, commentUpdateRequest))
+			.isInstanceOf(UserNotFoundException.class)
+			.hasMessage(UserNotFoundException.MESSAGE);
+		verify(commentRepository, never()).findById(commentId);
+	}
+
+	@Test
+	@DisplayName("댓글 수정 실패 테스트 - 댓글이 존재하지 않음")
+	void update_comment_fail_by_no_comment() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("Updated comment content")
+			.build();
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.updateComment(userId, commentId, commentUpdateRequest))
+			.isInstanceOf(CommentNotFoundException.class)
+			.hasMessage(CommentNotFoundException.MESSAGE);
+		verify(comment, never()).update(any(CommentUpdateRequest.class), any(Clock.class));
+	}
+	@Test
+	@DisplayName("댓글 수정 실패 테스트 - 사용자가 댓글 작성자가 아님")
+	void update_comment_fail_by_no_right_for_update() {
+		// given
+		Long commentId = 1L;
+		Long userId = 2L;
+		CommentUpdateRequest commentUpdateRequest = CommentUpdateRequest.builder()
+			.content("Updated comment content")
+			.build();
+
+		when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+		when(comment.getUser()).thenReturn(mock(User.class));
+		when(comment.getUser().getId()).thenReturn(3L); // 다른 사용자
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.updateComment(userId, commentId, commentUpdateRequest))
+			.isInstanceOf(NoRightForCommentDeleteException.class)
+			.hasMessage(NoRightForCommentDeleteException.MESSAGE);
+		verify(comment, never()).update(any(CommentUpdateRequest.class), any(Clock.class));
+	}
 }
+

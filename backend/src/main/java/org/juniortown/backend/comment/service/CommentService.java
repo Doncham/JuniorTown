@@ -3,6 +3,7 @@ package org.juniortown.backend.comment.service;
 import java.time.Clock;
 
 import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
+import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
@@ -90,5 +91,24 @@ public class CommentService {
 		}
 
 		comment.softDelete(clock);
+	}
+
+	public void updateComment(Long userId, Long commentId, CommentUpdateRequest commentUpdateRequest) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> {
+				log.info("User not found with id: {}", userId);
+				return new UserNotFoundException();
+			});
+		Comment comment = commentRepository.findById(commentId)
+			.orElseThrow(() -> {
+				log.info("Comment not found with id: {}", commentId);
+				return new CommentNotFoundException();
+			});
+
+		if (!comment.getUser().getId().equals(user.getId())) {
+			log.info("User {} does not have permission to update comment {}", userId, commentId);
+			throw new NoRightForCommentDeleteException();
+		}
+		comment.update(commentUpdateRequest, clock);
 	}
 }

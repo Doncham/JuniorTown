@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.entity.BaseTimeEntity;
 import org.juniortown.backend.post.entity.Post;
@@ -73,4 +74,11 @@ public class Comment extends BaseTimeEntity {
 		this.deletedAt = LocalDateTime.now(clock);
 	}
 
+	public void update(CommentUpdateRequest commentUpdateRequest, Clock clock) {
+		if (this.deletedAt != null) {
+			throw new AlreadyDeletedCommentException();
+		}
+		this.content = commentUpdateRequest.getContent();
+		this.updatedAt = LocalDateTime.now(clock);
+	}
 }
