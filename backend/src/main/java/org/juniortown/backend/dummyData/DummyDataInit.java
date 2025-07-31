@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-@Profile("default")
+@Profile("!test")
 public class DummyDataInit implements CommandLineRunner {
 	private final UserRepository userRepository;
 	private final PostRepository postRepository;

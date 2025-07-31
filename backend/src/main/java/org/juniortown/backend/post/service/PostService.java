@@ -1,11 +1,18 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.juniortown.backend.comment.dto.response.CommentsInPost;
+import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.repository.CommentRepository;
+import org.juniortown.backend.comment.service.CommentTreeBuilder;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
@@ -40,6 +47,7 @@ public class PostService {
 	private final UserRepository userRepository;
 	private final LikeRepository likeRepository;
 	private final ViewCountService viewCountService;
+	private final CommentRepository commentRepository;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
 	private final static int PAGE_SIZE = 10;
@@ -136,6 +144,11 @@ public class PostService {
 		}
 		Long likeCount = likeRepository.countByPostId(postId);
 		Long redisReadCount = viewCountService.readCountUp(viewerId, postId.toString());
+
+		// 댓글 조회 로직
+		List<Comment> comments = commentRepository.findByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
+		List<CommentsInPost> commentTree = CommentTreeBuilder.build(comments);
+
 		return PostDetailResponse.builder()
 			.id(post.getId())
 			.title(post.getTitle())
@@ -145,6 +158,7 @@ public class PostService {
 			.likeCount(likeCount)
 			.isLiked(like.isPresent())
 			.readCount(post.getReadCount() + redisReadCount)
+			.comments(commentTree)
 			.createdAt(post.getCreatedAt())
 			.updatedAt(post.getUpdatedAt())
 			.deletedAt(post.getDeletedAt())

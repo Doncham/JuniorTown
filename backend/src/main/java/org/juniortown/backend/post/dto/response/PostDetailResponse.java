@@ -1,6 +1,9 @@
 package org.juniortown.backend.post.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
+import org.juniortown.backend.comment.dto.response.CommentsInPost;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -15,13 +18,14 @@ public class PostDetailResponse {
 	private final Long likeCount;
 	private final Boolean isLiked;
 	private final Long readCount;
+	private final List<CommentsInPost> comments;
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
 
 	@Builder
 	public PostDetailResponse(Long id, String title, String content, Long userId, String userName, Long likeCount,
-			Boolean isLiked, Long readCount, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+			Boolean isLiked, Long readCount, List<CommentsInPost> comments, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
 		this.id = id;
 		this.title = title;
 		this.content = content;
@@ -30,6 +34,7 @@ public class PostDetailResponse {
 		this.likeCount = likeCount;
 		this.isLiked = isLiked;
 		this.readCount = readCount;
+		this.comments = comments;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 		this.deletedAt = deletedAt;

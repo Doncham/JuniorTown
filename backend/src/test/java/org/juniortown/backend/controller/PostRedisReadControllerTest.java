@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.post.service.ViewCountSyncService;
@@ -54,7 +55,7 @@ import jakarta.servlet.http.Cookie;
 @ActiveProfiles("test")
 @Transactional
 @Testcontainers
-@Import(RedisTestConfig.class)
+@Import({RedisTestConfig.class, TestClockConfig.class})
 public class PostRedisReadControllerTest {
 	@Autowired
 	private MockMvc mockMvc;

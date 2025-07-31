@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
+import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.like.service.LikeService;
@@ -39,6 +40,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -46,7 +48,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class})
+@Import({RedisTestConfig.class, SyncConfig.class, TestClockConfig.class})
 @Transactional
 public class PostControllerPagingTest {
 	@Autowired
@@ -73,19 +75,7 @@ public class PostControllerPagingTest {
 	private static final int POST_COUNT = 53;
 
 	@BeforeEach
-	void clean_and_init() {
-		// 게시글 더미 데이터 생성
-		for (int i = 0; i < POST_COUNT; i++) {
-			Post post = Post.builder()
-				.user(testUser1)
-				.title("테스트 글 " + (i + 1))
-				.content("테스트 내용 " + (i + 1))
-				.build();
-			postRepository.save(post);
-		}
-	}
-	@BeforeAll
-	public void init() throws Exception {
+	void clean_and_init() throws Exception {
 		UUID uuid1 = UUID.randomUUID();
 		UUID uuid2 = UUID.randomUUID();
 		String email1 = uuid1 + "@naver.com";
@@ -122,6 +112,15 @@ public class PostControllerPagingTest {
 			.andDo(result -> {
 				jwt = result.getResponse().getHeader("Authorization");
 			});
+		// 게시글 더미 데이터 생성
+		for (int i = 0; i < POST_COUNT; i++) {
+			Post post = Post.builder()
+				.user(testUser1)
+				.title("테스트 글 " + (i + 1))
+				.content("테스트 내용 " + (i + 1))
+				.build();
+			postRepository.save(post);
+		}
 	}
 	@Test
 	@DisplayName("글 목록 조회 - 첫 페이지 조회 성공")
@@ -140,7 +139,6 @@ public class PostControllerPagingTest {
 			.andExpect(jsonPath("$.hasPrevious").value(false))
 			.andExpect(jsonPath("$.hasNext").value(true)) // 다음 페이지 있음
 			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
-			.andExpect(jsonPath("$.content[0].id").value(53))
 			.andExpect(jsonPath("$.content[0].title").value("테스트 글 53")) // 첫 번째 게시글 제목
 			.andExpect(jsonPath("$.content[0].userId").value(testUser1.getId())) // 첫 번째 게시글 작성자 ID
 			.andExpect(jsonPath("$.content[0].userName").value(testUser1.getName())) // 첫 번째 게시글 작성자 이름

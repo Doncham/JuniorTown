@@ -30,6 +30,7 @@ import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -76,7 +77,7 @@ class CommentControllerTest {
 	private final static String COMMENT_CONTENT_NOT_EMPTY = "댓글 내용을 입력해주세요.";
 	private final static String POST_ID_NOT_EMPTY = "게시글 ID를 입력해주세요.";
 
-	@BeforeAll
+	@BeforeEach
 	public void init() throws Exception {
 		UUID uuid = UUID.randomUUID();
 		String email = uuid + "@naver.com";
