@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.config.TestClockConfig;
+import org.juniortown.backend.config.TestClockNotMockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.like.service.LikeService;
@@ -36,20 +37,26 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.testcontainers.RedisContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class, TestClockConfig.class})
+@Import({RedisTestConfig.class, SyncConfig.class, TestClockNotMockConfig.class})
 @Transactional
+@Testcontainers
 public class PostControllerPagingTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -72,6 +79,17 @@ public class PostControllerPagingTest {
 	private User testUser2;
 	@Autowired
 	private Clock clock;
+	@Container
+	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
+		.withCommand("redis-server --port 6381")
+		.withExposedPorts(6381);
+
+
+	@DynamicPropertySource
+	static void overrideProps(DynamicPropertyRegistry registry) {
+		registry.add("spring.data.redis.host", redis::getHost);
+		registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort());
+	}
 	private static final int POST_COUNT = 53;
 
 	@BeforeEach

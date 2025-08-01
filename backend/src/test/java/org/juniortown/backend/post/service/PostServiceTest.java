@@ -286,7 +286,7 @@ class PostServiceTest {
 		// when
 		//when(user.getId()).thenReturn(userId);
 		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
-		when(commentRepository.findByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(postId))
+		when(commentRepository.findByPostIdOrderByCreatedAtAsc(postId))
 			.thenReturn(List.of(parentComment1, parentComment2, childComment1, childComment2));
 
 		PostDetailResponse result = postService.getPost(postId, String.valueOf(userId));

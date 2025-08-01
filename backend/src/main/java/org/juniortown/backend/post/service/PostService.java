@@ -1,10 +1,7 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -146,7 +143,7 @@ public class PostService {
 		Long redisReadCount = viewCountService.readCountUp(viewerId, postId.toString());
 
 		// 댓글 조회 로직
-		List<Comment> comments = commentRepository.findByPostIdAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
+		List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
 		List<CommentsInPost> commentTree = CommentTreeBuilder.build(comments);
 
 		return PostDetailResponse.builder()
