@@ -25,12 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class CommentService {
 	private final CommentRepository commentRepository;
 	private final UserRepository userRepository;
 	private final PostRepository postRepository;
 	private final Clock clock;
-	@Transactional
+
 	public CommentCreateResponse createComment(Long userId, CommentCreateRequest commentCreateRequest) {
 		String content = commentCreateRequest.getContent();
 		Long postId = commentCreateRequest.getPostId();
