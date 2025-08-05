@@ -3,6 +3,7 @@ package org.juniortown.backend.comment.service;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
@@ -10,7 +11,9 @@ import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
 import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
+import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
@@ -158,6 +161,63 @@ class CommentServiceTest {
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(ParentPostMismatchException.class)
 			.hasMessage("부모 댓글의 게시글과 대댓글이 속한 게시글이 일치하지 않습니다.");
+		verify(commentRepository, never()).save(any(Comment.class));
+	}
+	@Test
+	@DisplayName("대댓글 생성 실패 테스트 - 부모 댓글이 대댓글인 경우 depth-2를 위반")
+	void create_child_comment_fail_by_parent_comment_has_parent_comment() {
+		// given
+		Long parentId = 2L;
+
+		String content = "This is a comment";
+		CommentCreateRequest commentCreateRequest = CommentCreateRequest.builder()
+			.content(content)
+			.postId(POST_ID)
+			.parentId(parentId)
+			.build();
+
+		Comment parentComment = mock(Comment.class);
+		when(commentRepository.findById(parentId)).thenReturn(Optional.of(parentComment));
+		when(parentComment.getParent()).thenReturn(mock(Comment.class)); // 부모 댓글이 대댓글인 경우
+
+		when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+		when(postRepository.findById(POST_ID)).thenReturn(Optional.of(post));
+
+
+		// when, then
+		verify(commentRepository, never()).save(any(Comment.class));
+		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
+			.isInstanceOf(DepthLimitTwoException.class)
+			.hasMessage(DepthLimitTwoException.MESSAGE);
+		verify(commentRepository, never()).save(any(Comment.class));
+	}
+
+	@Test
+	@DisplayName("대댓글 생성 실패 테스트 - 부모 댓글이 알고보니 삭제됨")
+	void create_child_comment_fail_by_parent_comment_is_deleted() {
+		// given
+		Long parentId = 2L;
+
+		String content = "This is a comment";
+		CommentCreateRequest commentCreateRequest = CommentCreateRequest.builder()
+			.content(content)
+			.postId(POST_ID)
+			.parentId(parentId)
+			.build();
+
+		Comment parentComment = mock(Comment.class);
+		when(commentRepository.findById(parentId)).thenReturn(Optional.of(parentComment));
+		when(parentComment.getDeletedAt()).thenReturn(LocalDateTime.now()); // 부모 댓글이 대댓글인 경우
+
+		when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+		when(postRepository.findById(POST_ID)).thenReturn(Optional.of(post));
+
+
+		// when, then
+		verify(commentRepository, never()).save(any(Comment.class));
+		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
+			.isInstanceOf(AlreadyDeletedCommentException.class)
+			.hasMessage(AlreadyDeletedCommentException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 

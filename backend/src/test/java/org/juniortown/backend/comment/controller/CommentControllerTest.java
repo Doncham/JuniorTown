@@ -12,7 +12,9 @@ import org.assertj.core.api.Assertions;
 import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
 import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
+import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
@@ -213,7 +215,7 @@ class CommentControllerTest {
 	}
 
 	@Test
-	@DisplayName("댓글 생성 실패 - 부모 댓글과 자식 댓글의 게시글이 다름")
+	@DisplayName("대댓글 생성 실패 - 부모 댓글과 자식 댓글의 게시글이 다름")
 	void create_comment_fail_with_not_same_post() throws Exception {
 		Post dummyPost = Post.builder()
 			.title("다른 게시글")
@@ -247,7 +249,7 @@ class CommentControllerTest {
 	}
 
 	@Test
-	@DisplayName("댓글 생성 실패 - 부모 댓글이 존재하지 않음.")
+	@DisplayName("대댓글 생성 실패 - 부모 댓글이 존재하지 않음.")
 	void create_comment_fail_with_parent_comment_not_exist() throws Exception {
 		Comment parentComment = Comment.builder()
 			.content("부모 댓글")
@@ -310,6 +312,69 @@ class CommentControllerTest {
 			.andExpect(jsonPath("$.validation.postId").value(POST_ID_NOT_EMPTY))
 			.andDo(print());
 	}
+	@Test
+	@DisplayName("대댓글 생성 실패 - 부모 댓글이 삭제됨")
+	void create_comment_fail_with_parent_comment_is_deleted() throws Exception {
+		Comment parentComment = Comment.builder()
+			.content("부모 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		Comment savedParentComment = commentRepository.save(parentComment);
+		savedParentComment.softDelete(clock);
+
+		CommentCreateRequest commentRequest = CommentCreateRequest.builder()
+			.content("테스트 댓글")
+			.postId(post.getId())
+			.parentId(savedParentComment.getId()) // 최상위 댓글인 경우 null
+			.build();
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/comments")
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentRequest))
+			)
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.message").value(AlreadyDeletedCommentException.MESSAGE))
+			.andDo(print());
+	}
+	@Test
+	@DisplayName("대댓글 생성 실패 - 부모 댓글이 대댓글인 경우 (깊이 제한)")
+	void create_comment_fail_with_parent_comment_has_parent_depth_limit() throws Exception {
+		Comment grandParentComment = Comment.builder()
+			.content("할아버지 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+		Comment parentComment = Comment.builder()
+			.parent(grandParentComment)
+			.content("부모 댓글")
+			.post(post)
+			.user(testUser)
+			.username(testUser.getName())
+			.build();
+
+		commentRepository.save(grandParentComment);
+		Comment savedParentComment = commentRepository.save(parentComment);
+
+		CommentCreateRequest commentRequest = CommentCreateRequest.builder()
+			.content("테스트 댓글")
+			.postId(post.getId())
+			.parentId(parentComment.getId()) // 최상위 댓글인 경우 null
+			.build();
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/comments")
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+				.content(objectMapper.writeValueAsString(commentRequest))
+			)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.message").value(DepthLimitTwoException.MESSAGE))
+			.andDo(print());
+	}
+
 	@Test
 	@DisplayName("댓글 삭제 성공")
 	void delete_comment_success() throws Exception {

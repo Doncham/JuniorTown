@@ -106,6 +106,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
                         onClick={(e) => {
                           setEditingId(comment.commentId);
                           setEditingContent(comment.content);
+                          setReplyParentId(null); // 대댓글 입력창 닫기
                         }}
                         style={{ textDecoration: 'underline', color: '#0d6efd' }}
                       >
@@ -163,7 +164,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
             )}
 
             {/* 대댓글 입력창 */}
-            {!comment.deletedAt && (
+            {!comment.deletedAt && comment.parentId === null && (
               <>
                 {replyParentId === comment.commentId ? (
                   <Form
@@ -197,7 +198,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
                       </Button>
                     </div>
                   </Form>
-                ) : (
+                ) : editingId !== comment.commentId ? (
                   <Button
                     variant="outline-secondary"
                     size="sm"
@@ -206,7 +207,8 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
                   >
                     답글
                   </Button>
-                )}
+                ) : null}
+
               </>
             )}
           </Card.Body>

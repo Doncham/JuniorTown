@@ -6,7 +6,9 @@ import org.juniortown.backend.comment.dto.request.CommentCreateRequest;
 import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
+import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
@@ -56,6 +58,14 @@ public class CommentService {
 					log.info("Parent comment not found with id: {}", parentId);
 					return new CommentNotFoundException();
 				});
+			if (parentComment.getDeletedAt() != null) {
+				log.info("Parent comment with id {} is already deleted.", parentId);
+				throw new AlreadyDeletedCommentException();
+			}
+			if(parentComment.getParent() != null) {
+				log.info("depth는 2로 제한됩니다. 현재 parentComment의 parent가 존재합니다.");
+				throw new DepthLimitTwoException();
+			}
 			if(!parentComment.getPost().getId().equals(postId)) {
 				log.info("comment의 postId {}가 post ID {}와 다름.", parentComment.getPost().getId(), postId);
 				throw new ParentPostMismatchException();
