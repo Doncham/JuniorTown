@@ -35,14 +35,14 @@ public class CommentController {
 	}
 
 	@DeleteMapping("/comments/{commentId}")
-	public ResponseEntity<?> CommentDeleteRequest(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+	public ResponseEntity<?> commentDeleteRequest(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@PathVariable Long commentId) {
 		Long userId = customUserDetails.getUserId();
 		commentService.deleteComment(userId, commentId);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 	@PatchMapping("/comments/{commentId}")
-	public ResponseEntity<?> CommentUpdateRequest(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+	public ResponseEntity<?> commentUpdateRequest(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@PathVariable Long commentId, @Valid @RequestBody CommentUpdateRequest commentUpdateRequest) {
 		Long userId = customUserDetails.getUserId();
 		commentService.updateComment(userId, commentId, commentUpdateRequest);

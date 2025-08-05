@@ -277,10 +277,10 @@ class PostServiceTest {
 		String name = "testName";
 		user = createUser(userId, name,  "test@email.com");
 		post = createPost(postId, title, content, user);
-		Comment parentComment1 = commentCreate(1L, post, user, "부모 댓글1", null);
-		Comment parentComment2 = commentCreate(2L, post, user, "부모 댓글2", null);
-		Comment childComment1 = commentCreate(3L, post, user, "자식 댓글1", parentComment1);
-		Comment childComment2 = commentCreate(4L, post, user, "자식 댓글2", parentComment2);
+		Comment parentComment1 = createComment(1L, post, user, "부모 댓글1", null);
+		Comment parentComment2 = createComment(2L, post, user, "부모 댓글2", null);
+		Comment childComment1 = createComment(3L, post, user, "자식 댓글1", parentComment1);
+		Comment childComment2 = createComment(4L, post, user, "자식 댓글2", parentComment2);
 
 
 		// when

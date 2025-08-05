@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.repository.CommentRepository;
@@ -82,6 +83,12 @@ public class PostRedisReadControllerTest {
 	private Clock clock;
 	Post testPost;
 
+	private static final String PARENT_COMMENT_CONTENT1 = "I'm Parent Comment1";
+	private static final String PARENT_COMMENT_CONTENT2 = "I'm Parent Comment2";
+	private static final String CHILD_COMMENT_CONTENT1 = "I'm Child Comment1";
+	private static final String CHILD_COMMENT_CONTENT2 = "I'm Child Comment2";
+
+
 	@Container
 	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
 		.withCommand("redis-server --port 6380")
@@ -139,26 +146,26 @@ public class PostRedisReadControllerTest {
 			.post(testPost)
 			.user(testUser)
 			.username(testUser.getName())
-			.content("I'm Parent Comment1")
+			.content(PARENT_COMMENT_CONTENT1)
 			.build();
 		Comment parentComment2 = Comment.builder()
 			.post(testPost)
 			.user(testUser)
 			.username(testUser.getName())
-			.content("I'm Parent Comment2")
+			.content(PARENT_COMMENT_CONTENT2)
 			.build();
 		Comment childComment1 = Comment.builder()
 			.post(testPost)
 			.user(testUser)
 			.username(testUser.getName())
-			.content("I'm Child Comment1")
+			.content(CHILD_COMMENT_CONTENT1)
 			.parent(parentComment1)
 			.build();
 		Comment childComment2 = Comment.builder()
 			.post(testPost)
 			.user(testUser)
 			.username(testUser.getName())
-			.content("I'm Child Comment2")
+			.content(CHILD_COMMENT_CONTENT2)
 			.parent(parentComment2)
 			.build();
 		commentRepository.saveAll(List.of(
@@ -171,7 +178,6 @@ public class PostRedisReadControllerTest {
 
 	@Test
 	@DisplayName("게시글 조회수 증가 성공(회원) - 중복키 존재 x")
-	// d이놈
 	void read_count_increase_with_user() throws Exception {
 		// 1.게시글 상세 조회할 때 조회수도 이제 반환해줘야 함
 		// 2.조회수는 DB에 있는 값 + Redis에 있는 값이다.
@@ -408,7 +414,11 @@ public class PostRedisReadControllerTest {
 		List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(
 			postId);
 		// 나중에 테스트 케이스 더 추가되면 무조건 깨지긴해
-		Long childComment2 = comments.get(3).getId();
+		Long childComment2 = comments.stream()
+			.filter(c -> c.getContent().equals(CHILD_COMMENT_CONTENT2))
+			.map(Comment::getId)
+			.collect(Collectors.toList())
+			.get(0);
 
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", childComment2)
 				.contentType(APPLICATION_JSON)

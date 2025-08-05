@@ -16,6 +16,7 @@ import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
+import org.juniortown.backend.comment.exception.NoRightForCommentUpdateException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
@@ -563,7 +564,7 @@ class CommentControllerTest {
 				.content(objectMapper.writeValueAsString(commentUpdateRequest))
 			)
 			.andExpect(status().isForbidden())
-			.andExpect(jsonPath("$.message").value(NoRightForCommentDeleteException.MESSAGE))
+			.andExpect(jsonPath("$.message").value(NoRightForCommentUpdateException.MESSAGE))
 			.andDo(print());
 	}
 

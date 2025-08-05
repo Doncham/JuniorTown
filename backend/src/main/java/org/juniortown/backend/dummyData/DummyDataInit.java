@@ -28,7 +28,7 @@ public class DummyDataInit implements CommandLineRunner {
 			.username("testUser")
 			.password("1234")
 			.build();
-		// 와 반환값 살벌하네
+
 		authService.signUp(signUpDTO);
 
 		User user = userRepository.findByEmail(signUpDTO.getEmail())

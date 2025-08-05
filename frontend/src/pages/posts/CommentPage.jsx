@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Form, Card } from 'react-bootstrap';
 import axios from 'axios';
-export default CommentSection;
+
 
 function CommentSection({ postId, comments, myUserId, refreshPost }) {
   // 댓글 입력/수정 상태
@@ -246,4 +246,4 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
   );
 };
 
-
+export default CommentSection;

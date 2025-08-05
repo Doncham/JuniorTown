@@ -10,6 +10,7 @@ import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
+import org.juniortown.backend.comment.exception.NoRightForCommentUpdateException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.post.entity.Post;
@@ -118,7 +119,7 @@ public class CommentService {
 
 		if (!comment.getUser().getId().equals(user.getId())) {
 			log.info("User {} does not have permission to update comment {}", userId, commentId);
-			throw new NoRightForCommentDeleteException();
+			throw new NoRightForCommentUpdateException();
 		}
 		comment.update(commentUpdateRequest, clock);
 	}

@@ -31,10 +31,10 @@ class CommentTreeBuilderTest {
 		userA = createUser(1L, "testA", "testA@gmail.com");
 		userB = createUser(2L, "testB", "testB@gmail.com");
 		post = createPost(1L, "테스트 게시글", "테스트 게시글 내용", userA);
-		parentComment1 = commentCreate(1L, post, userA, "부모 댓글1", null);
-		parentComment2 = commentCreate(2L, post, userB, "부모 댓글2", null);
-		childComment1 = commentCreate(3L, post, userA, "자식 댓글1", parentComment1);
-		childComment2 = commentCreate(4L, post, userB, "자식 댓글2", parentComment2);
+		parentComment1 = createComment(1L, post, userA, "부모 댓글1", null);
+		parentComment2 = createComment(2L, post, userB, "부모 댓글2", null);
+		childComment1 = createComment(3L, post, userA, "자식 댓글1", parentComment1);
+		childComment2 = createComment(4L, post, userB, "자식 댓글2", parentComment2);
 	}
 	@Test
 	@DisplayName("빈 리스트 주입 시 빈 리스트 반환")

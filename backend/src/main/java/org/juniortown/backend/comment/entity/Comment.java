@@ -79,6 +79,5 @@ public class Comment extends BaseTimeEntity {
 			throw new AlreadyDeletedCommentException();
 		}
 		this.content = commentUpdateRequest.getContent();
-		//this.updatedAt = LocalDateTime.now(clock);
 	}
 }

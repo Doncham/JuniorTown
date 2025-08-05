@@ -15,9 +15,11 @@ import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
+import org.juniortown.backend.comment.exception.NoRightForCommentUpdateException;
 import org.juniortown.backend.comment.exception.ParentPostMismatchException;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.post.entity.Post;
+import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
@@ -160,7 +162,7 @@ class CommentServiceTest {
 		// 예외 터진거 확인은 어떻게 해?
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(ParentPostMismatchException.class)
-			.hasMessage("부모 댓글의 게시글과 대댓글이 속한 게시글이 일치하지 않습니다.");
+			.hasMessage(ParentPostMismatchException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 	@Test
@@ -238,7 +240,7 @@ class CommentServiceTest {
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(UserNotFoundException.class)
-			.hasMessage("해당 사용자를 찾을 수 없습니다.");
+			.hasMessage(UserNotFoundException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 	@Test
@@ -253,12 +255,13 @@ class CommentServiceTest {
 			.parentId(parentId)
 			.build();
 
-		when(userRepository.findById(USER_ID)).thenReturn(Optional.ofNullable(null));
+		when(userRepository.findById(USER_ID)).thenReturn(Optional.ofNullable(user));
+		when(postRepository.findById(POST_ID)).thenReturn(Optional.empty());
 
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
-			.isInstanceOf(UserNotFoundException.class)
-			.hasMessage("해당 사용자를 찾을 수 없습니다.");
+			.isInstanceOf(PostNotFoundException.class)
+			.hasMessage(PostNotFoundException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 
@@ -281,7 +284,7 @@ class CommentServiceTest {
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
 			.isInstanceOf(CommentNotFoundException.class)
-			.hasMessage("해당 댓글을 찾을 수 없습니다.");
+			.hasMessage(CommentNotFoundException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 
@@ -430,8 +433,8 @@ class CommentServiceTest {
 
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.updateComment(userId, commentId, commentUpdateRequest))
-			.isInstanceOf(NoRightForCommentDeleteException.class)
-			.hasMessage(NoRightForCommentDeleteException.MESSAGE);
+			.isInstanceOf(NoRightForCommentUpdateException.class)
+			.hasMessage(NoRightForCommentUpdateException.MESSAGE);
 		verify(comment, never()).update(any(CommentUpdateRequest.class), any(Clock.class));
 	}
 }

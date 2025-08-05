@@ -20,7 +20,7 @@ public class CommentsInPost {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
-	private List<CommentsInPost> children = new ArrayList<>();
+	private final List<CommentsInPost> children = new ArrayList<>();
 	@Builder
 	public CommentsInPost(Long commentId, Long postId, Long parentId, Long userId, String content, String username, LocalDateTime createdAt,
 		LocalDateTime updatedAt, LocalDateTime deletedAt) {

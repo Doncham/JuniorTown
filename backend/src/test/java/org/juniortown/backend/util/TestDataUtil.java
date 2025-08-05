@@ -6,7 +6,7 @@ import org.juniortown.backend.user.entity.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class TestDataUtil {
-	public static Comment commentCreate(Long id, Post post, User user, String content, Comment parentComment) {
+	public static Comment createComment(Long id, Post post, User user, String content, Comment parentComment) {
 		Comment comment = Comment.builder()
 			.post(post)
 			.user(user)
