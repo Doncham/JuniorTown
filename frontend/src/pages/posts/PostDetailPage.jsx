@@ -128,7 +128,7 @@ const PostDetailPage = () => {
                     myUserId={myUserId}
                     refreshPost={() => {
                       // 댓글 등록/수정/삭제 후, 게시글/댓글 전체 데이터를 새로 불러오는 함수
-                      window.location.reload();
+                      fetchPost();
                     }}
                   />
                 </div>
