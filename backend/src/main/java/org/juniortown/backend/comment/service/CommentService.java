@@ -7,6 +7,7 @@ import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
+import org.juniortown.backend.comment.exception.CircularReferenceException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
@@ -73,6 +74,7 @@ public class CommentService {
 			}
 		}
 
+
 		Comment comment = Comment.builder()
 			.content(content)
 			.user(user)
@@ -82,6 +84,8 @@ public class CommentService {
 			.build();
 
 		Comment saveComment = commentRepository.save(comment);
+		// 순환 참조 방지 로직
+		validateNoCircularReference(parentComment, saveComment.getId());
 		return CommentCreateResponse.from(saveComment);
 	}
 
@@ -122,5 +126,17 @@ public class CommentService {
 			throw new NoRightForCommentUpdateException();
 		}
 		comment.update(commentUpdateRequest, clock);
+		// 순환 참조 방지 로직
+		validateNoCircularReference(comment.getParent(), commentId);
 	}
+	private void validateNoCircularReference(Comment parent, Long childId) {
+		Comment current = parent;
+		while (current != null) {
+			if (current.getId().equals(childId)) {
+				throw new CircularReferenceException();
+			}
+			current = current.getParent();
+		}
+	}
+
 }

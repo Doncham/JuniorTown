@@ -12,6 +12,7 @@ import org.juniortown.backend.comment.dto.request.CommentUpdateRequest;
 import org.juniortown.backend.comment.dto.response.CommentCreateResponse;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.exception.AlreadyDeletedCommentException;
+import org.juniortown.backend.comment.exception.CircularReferenceException;
 import org.juniortown.backend.comment.exception.CommentNotFoundException;
 import org.juniortown.backend.comment.exception.DepthLimitTwoException;
 import org.juniortown.backend.comment.exception.NoRightForCommentDeleteException;
@@ -26,6 +27,7 @@ import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -277,15 +279,48 @@ class CommentServiceTest {
 			.parentId(parentId)
 			.build();
 
+
+
+
 		when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 		when(postRepository.findById(POST_ID)).thenReturn(Optional.of(post));
 		when(commentRepository.findById(parentId)).thenReturn(Optional.empty());
 
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
-			.isInstanceOf(CommentNotFoundException.class)
-			.hasMessage(CommentNotFoundException.MESSAGE);
+			.isInstanceOf(CircularReferenceException.class)
+			.hasMessage(CircularReferenceException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
+	}
+	@Test
+	@DisplayName("대댓글 생성 실패 - 댓글 순환 참조 발생")
+	void create_child_comment_fail_by_circular_reference() {
+		// given
+		Long parentId = 1L;
+		String content = "This is a comment";
+		CommentCreateRequest commentCreateRequest = CommentCreateRequest.builder()
+			.content(content)
+			.postId(POST_ID)
+			.parentId(parentId)
+			.build();
+
+		when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+		when(postRepository.findById(POST_ID)).thenReturn(Optional.of(post));
+		when(post.getId()).thenReturn(POST_ID);
+
+		Comment parentComment = mock(Comment.class);
+		when(commentRepository.findById(parentId)).thenReturn(Optional.of(parentComment));
+		when(parentComment.getId()).thenReturn(parentId);
+		when(parentComment.getPost()).thenReturn(post);
+
+		when(commentRepository.save(any())).thenReturn(comment);
+		// 조금 억지스러운 순환 참조지만 현재 2-depth에서는 최선인듯.
+		when(comment.getId()).thenReturn(parentId);
+
+		// when, then
+		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
+			.isInstanceOf(CircularReferenceException.class)
+			.hasMessage(CircularReferenceException.MESSAGE);
 	}
 
 	@Test

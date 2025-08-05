@@ -25,7 +25,8 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
       setCommentContent('');
       refreshPost(); // 게시글 및 댓글 데이터 새로고침
     } catch (err) {
-      alert('댓글 등록 실패');
+      console.error('댓글 등록 실패:', err);
+      alert(`댓글 등록 실패: ${err.response?.data?.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
   };
 
@@ -44,7 +45,8 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
       setReplyParentId(null);
       refreshPost();
     } catch (err) {
-      alert('대댓글 등록 실패');
+      console.error('대댓글 등록 실패:', err);
+      alert(`댓글 등록 실패: ${err.response?.data?.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
   };
 
@@ -58,7 +60,8 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
       });
       refreshPost();
     } catch (err) {
-      alert('댓글 삭제 실패');
+      console.error('댓글 삭제 실패:', err);
+      alert(`댓글 삭제 실패: ${err.response?.data?.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
   };
 
@@ -75,7 +78,8 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
       setEditingContent('');
       refreshPost();
     } catch (err) {
-      alert('댓글 수정 실패');
+      console.error('댓글 수정 실패:', err);
+      alert(`댓글 수정 실패: ${err.response?.data?.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
   };
 
