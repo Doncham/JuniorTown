@@ -2,13 +2,10 @@ package org.juniortown.backend.config;
 
 import java.time.Clock;
 
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-
-@Configuration
-@Profile("!test")
-public class TimeConfig {
+@TestConfiguration
+public class TestClockNotMockConfig {
 	@Bean
 	public Clock clock() {
 		return Clock.systemUTC();

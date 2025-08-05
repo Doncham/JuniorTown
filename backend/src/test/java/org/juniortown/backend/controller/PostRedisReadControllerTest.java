@@ -5,10 +5,16 @@ import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
+import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.post.service.ViewCountSyncService;
@@ -17,7 +23,6 @@ import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -26,7 +31,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -54,7 +58,7 @@ import jakarta.servlet.http.Cookie;
 @ActiveProfiles("test")
 @Transactional
 @Testcontainers
-@Import(RedisTestConfig.class)
+@Import({RedisTestConfig.class, TestClockConfig.class})
 public class PostRedisReadControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
@@ -62,6 +66,8 @@ public class PostRedisReadControllerTest {
 	private PostRepository postRepository;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private CommentRepository commentRepository;
 	@Autowired
 	private ObjectMapper objectMapper;
 	@Autowired
@@ -73,7 +79,15 @@ public class PostRedisReadControllerTest {
 	private RedisTemplate<String, Long> readCountRedisTemplate;
 	@Autowired
 	private RedissonClient redissonClient;
+	@Autowired
+	private Clock clock;
 	Post testPost;
+
+	private static final String PARENT_COMMENT_CONTENT1 = "I'm Parent Comment1";
+	private static final String PARENT_COMMENT_CONTENT2 = "I'm Parent Comment2";
+	private static final String CHILD_COMMENT_CONTENT1 = "I'm Child Comment1";
+	private static final String CHILD_COMMENT_CONTENT2 = "I'm Child Comment2";
+
 
 	@Container
 	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
@@ -126,6 +140,40 @@ public class PostRedisReadControllerTest {
 			.andDo(result -> {
 				jwt = result.getResponse().getHeader("Authorization");
 			});
+
+		// 댓글 생성
+		Comment parentComment1 = Comment.builder()
+			.post(testPost)
+			.user(testUser)
+			.username(testUser.getName())
+			.content(PARENT_COMMENT_CONTENT1)
+			.build();
+		Comment parentComment2 = Comment.builder()
+			.post(testPost)
+			.user(testUser)
+			.username(testUser.getName())
+			.content(PARENT_COMMENT_CONTENT2)
+			.build();
+		Comment childComment1 = Comment.builder()
+			.post(testPost)
+			.user(testUser)
+			.username(testUser.getName())
+			.content(CHILD_COMMENT_CONTENT1)
+			.parent(parentComment1)
+			.build();
+		Comment childComment2 = Comment.builder()
+			.post(testPost)
+			.user(testUser)
+			.username(testUser.getName())
+			.content(CHILD_COMMENT_CONTENT2)
+			.parent(parentComment2)
+			.build();
+		commentRepository.saveAll(List.of(
+			parentComment1,
+			parentComment2,
+			childComment1,
+			childComment2
+		));
 	}
 
 	@Test
@@ -192,7 +240,13 @@ public class PostRedisReadControllerTest {
 			.andExpect(jsonPath("$.likeCount").value(0))
 		    .andExpect(jsonPath("$.createdAt").exists())
 			.andExpect(jsonPath("$.updatedAt").exists())
-			.andExpect(jsonPath("$.deletedAt").doesNotExist());
+			.andExpect(jsonPath("$.deletedAt").doesNotExist())
+			.andExpect(jsonPath("$.comments").isArray())
+			.andExpect(jsonPath("$.comments.length()").value(2))
+			.andExpect(jsonPath("$.comments[0].content").value("I'm Parent Comment1"))
+			.andExpect(jsonPath("$.comments[0].children[0].content").value("I'm Child Comment1"))
+			.andExpect(jsonPath("$.comments[1].content").value("I'm Parent Comment2"))
+			.andExpect(jsonPath("$.comments[1].children[0].content").value("I'm Child Comment2"));
 	}
 
 	@Test
@@ -314,5 +368,89 @@ public class PostRedisReadControllerTest {
 	// 	assertEquals(10L, readCountRedisTemplate.opsForValue().get(key));
 	// }
 
+	@Test
+	@DisplayName("게시글 조회 성공 With 댓글 트리 구조")
+	void post_details_read_with_comments_success() throws Exception {
+		Long postId = testPost.getId();
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.comments").isArray())
+			.andExpect(jsonPath("$.comments.length()").value(2))
+			.andExpect(jsonPath("$.comments[0].content").value("I'm Parent Comment1"))
+			.andExpect(jsonPath("$.comments[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[0].deletedAt").isEmpty())
+			.andExpect(jsonPath("$.comments[0].createdAt").value(LocalDateTime.now(clock).toString()))
+			.andExpect(jsonPath("$.comments[0].updatedAt").value(LocalDateTime.now(clock).toString()))
+
+			.andExpect(jsonPath("$.comments[0].children[0].content").value("I'm Child Comment1"))
+			.andExpect(jsonPath("$.comments[0].children[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[0].children[0].deletedAt").isEmpty())
+			.andExpect(jsonPath("$.comments[0].children[0].createdAt").value(LocalDateTime.now(clock).toString()))
+			.andExpect(jsonPath("$.comments[0].children[0].updatedAt").value(LocalDateTime.now(clock).toString()))
+
+			.andExpect(jsonPath("$.comments[1].content").value("I'm Parent Comment2"))
+			.andExpect(jsonPath("$.comments[1].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[1].deletedAt").isEmpty())
+			.andExpect(jsonPath("$.comments[1].createdAt").value(LocalDateTime.now(clock).toString()))
+			.andExpect(jsonPath("$.comments[1].updatedAt").value(LocalDateTime.now(clock).toString()))
+
+			.andExpect(jsonPath("$.comments[1].children[0].content").value("I'm Child Comment2"))
+			.andExpect(jsonPath("$.comments[1].children[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[1].children[0].deletedAt").isEmpty())
+			.andExpect(jsonPath("$.comments[1].children[0].createdAt").value(LocalDateTime.now(clock).toString()))
+			.andExpect(jsonPath("$.comments[1].children[0].updatedAt").value(LocalDateTime.now(clock).toString()));
+
+	}
+
+	@Test
+	@DisplayName("게시글 조회 성공 With 댓글 트리 구조 - 댓글 1개 삭제")
+	void post_details_read_with_one_comment_deleted_success() throws Exception {
+		Long postId = testPost.getId();
+		List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(
+			postId);
+		// 나중에 테스트 케이스 더 추가되면 무조건 깨지긴해
+		Long childComment2 = comments.stream()
+			.filter(c -> c.getContent().equals(CHILD_COMMENT_CONTENT2))
+			.map(Comment::getId)
+			.collect(Collectors.toList())
+			.get(0);
+
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/comments/{commentId}", childComment2)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+			.andExpect(status().isNoContent());
+
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/details/{postId}", postId)
+				.contentType(APPLICATION_JSON)
+				.header("Authorization", jwt)
+			)
+
+			.andExpect(status().isOk())
+			.andDo(print())
+			.andExpect(jsonPath("$.comments").isArray())
+			.andExpect(jsonPath("$.comments.length()").value(2))
+			.andExpect(jsonPath("$.comments[0].content").value("I'm Parent Comment1"))
+			.andExpect(jsonPath("$.comments[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[0].deletedAt").isEmpty())
+
+			.andExpect(jsonPath("$.comments[0].children[0].content").value("I'm Child Comment1"))
+			.andExpect(jsonPath("$.comments[0].children[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[0].children[0].deletedAt").isEmpty())
+
+			.andExpect(jsonPath("$.comments[1].content").value("I'm Parent Comment2"))
+			.andExpect(jsonPath("$.comments[1].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[1].deletedAt").isEmpty())
+
+			.andExpect(jsonPath("$.comments[1].children[0].content").value("I'm Child Comment2"))
+			.andExpect(jsonPath("$.comments[1].children[0].username").value("테스터"))
+			.andExpect(jsonPath("$.comments[1].children[0].deletedAt").value(LocalDateTime.now(clock).toString()));
+
+	}
 
 }

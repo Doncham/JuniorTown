@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
+import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.exception.LikeFailureException;
 import org.juniortown.backend.like.repository.LikeRepository;
@@ -37,7 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class})
+@Import({RedisTestConfig.class, SyncConfig.class, TestClockConfig.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @Transactional
 class LikeControllerTest {

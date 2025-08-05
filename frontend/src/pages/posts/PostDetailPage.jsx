@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import base64 from 'base-64';
+import CommentSection from './CommentPage'; // 댓글 컴포넌트 임포트
 
 const PostDetailPage = () => {
   const { id } = useParams();
@@ -75,6 +76,7 @@ const PostDetailPage = () => {
   // 내 userId와 게시글 userId 비교
   const isOwner = post && myUserId && String(post.userId) === String(myUserId);
 
+
   return (
     <Container className="mt-4">
       <Button variant="outline-secondary" onClick={handleBack} className="mb-3">
@@ -119,6 +121,17 @@ const PostDetailPage = () => {
                 <Card.Text style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                   {post.content}
                 </Card.Text>
+                <div className="mt-5">
+                  <CommentSection
+                    postId={post.id}
+                    comments={post.comments}
+                    myUserId={myUserId}
+                    refreshPost={() => {
+                      // 댓글 등록/수정/삭제 후, 게시글/댓글 전체 데이터를 새로 불러오는 함수
+                      fetchPost();
+                    }}
+                  />
+                </div>
               </Card.Body>
               <Card.Footer className="bg-white border-0 text-end">
                 {/* 소유자만 수정/삭제 버튼 노출 */}

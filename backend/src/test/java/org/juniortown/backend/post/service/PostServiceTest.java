@@ -1,12 +1,15 @@
 package org.juniortown.backend.post.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.juniortown.backend.util.TestDataUtil.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
+import org.juniortown.backend.comment.entity.Comment;
+import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
@@ -19,7 +22,6 @@ import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +52,8 @@ class PostServiceTest {
 	@Mock
 	private ViewCountService viewCountService;
 	@Mock
+	private CommentRepository commentRepository;
+	@Mock
 	private Clock clock;
 
 	@Mock
@@ -60,11 +64,6 @@ class PostServiceTest {
 	private RedisTemplate<String, Long> redisTemplate;
 	@Mock
 	private ValueOperations<String, Long> readCountValueOperations;
-
-	@BeforeEach
-	void clear() {
-		postRepository.deleteAll();
-	}
 
 	@Test
 	@DisplayName("게시글 생성 성공")
@@ -272,19 +271,23 @@ class PostServiceTest {
 		// given
 		long postId = 1L;
 		long userId = 2L;
+		long commentId= 1L;
 		String title = "testTitle";
 		String content = "testContent";
 		String name = "testName";
-		Post post = Post.builder()
-			.user(user)
-			.content(content)
-			.title(title)
-			.build();
+		user = createUser(userId, name,  "test@email.com");
+		post = createPost(postId, title, content, user);
+		Comment parentComment1 = createComment(1L, post, user, "부모 댓글1", null);
+		Comment parentComment2 = createComment(2L, post, user, "부모 댓글2", null);
+		Comment childComment1 = createComment(3L, post, user, "자식 댓글1", parentComment1);
+		Comment childComment2 = createComment(4L, post, user, "자식 댓글2", parentComment2);
+
 
 		// when
 		//when(user.getId()).thenReturn(userId);
-		when(user.getName()).thenReturn(name);
 		when(postRepository.findById(postId)).thenReturn(Optional.ofNullable(post));
+		when(commentRepository.findByPostIdOrderByCreatedAtAsc(postId))
+			.thenReturn(List.of(parentComment1, parentComment2, childComment1, childComment2));
 
 		PostDetailResponse result = postService.getPost(postId, String.valueOf(userId));
 
@@ -292,6 +295,12 @@ class PostServiceTest {
 		assertThat(result.getContent()).isEqualTo(content);
 		assertThat(result.getTitle()).isEqualTo(title);
 		assertThat(result.getUserName()).isEqualTo(name);
+		assertThat(result.getComments().size()).isEqualTo(2);
+		assertThat(result.getComments().get(0).getChildren().size()).isEqualTo(1);
+		assertThat(result.getComments().get(1).getChildren().size()).isEqualTo(1);
+		assertThat(result.getComments().get(0).getChildren().get(0).getContent()).isEqualTo("자식 댓글1");
+		assertThat(result.getComments().get(1).getChildren().get(0).getContent()).isEqualTo("자식 댓글2");
+
 		verify(postRepository).findById(postId);
 	}
 
