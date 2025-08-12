@@ -18,6 +18,13 @@ services:
       - "3000:3000"
     networks:
       - monitoring-network
+  k6:
+    image: grafana/k6
+    volumes:
+      - ./scripts:/scripts
+    entrypoint: ""
+    command: ["k6", "run", "/scripts/myscript.js"]
+
 networks:
     monitoring-network:
         driver: bridge
