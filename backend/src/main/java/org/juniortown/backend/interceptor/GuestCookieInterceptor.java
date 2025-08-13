@@ -30,6 +30,7 @@ public class GuestCookieInterceptor implements HandlerInterceptor {
 			cookie.setPath("/");
 			cookie.setMaxAge(60 * 60 * 24 * 15); // 15 days
 			cookie.setHttpOnly(true);
+			request.setAttribute(COOKIE_NAME, guestId);
 			response.addCookie(cookie);
 		}
 		return true;
