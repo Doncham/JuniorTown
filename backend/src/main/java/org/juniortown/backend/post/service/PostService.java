@@ -1,7 +1,9 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,6 +26,7 @@ import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -90,40 +93,54 @@ public class PostService {
 	}
 	@Transactional(readOnly = true)
 	public Page<PostResponse> getPosts(Long userId, int page) {
-		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
-		Page<PostWithLikeCountProjection> postPage = postRepository.findAllWithLikeCount(userId, pageable);
+		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 
-		List<Long> redisReadCounts = getReadCountFromRedisCache(postPage);
+		Page<PostWithLikeCountProjection> postPage = (userId == null)
+			? postRepository.findAllWithLikeCountForNonUser(pageable)
+			: postRepository.findAllWithLikeCountForUser(userId, pageable);
 
-		List<PostResponse> content = IntStream.range(0, postPage.getContent().size())
-			.mapToObj(i -> {
-				PostWithLikeCountProjection post = postPage.getContent().get(i);
-				Long redisReadCount = (redisReadCounts.size() > i && redisReadCounts.get(i) != null)
-					? redisReadCounts.get(i)
-					: 0L;
-				return PostResponse.builder()
-					.id(post.getId())
-					.title(post.getTitle())
-					.userId(post.getUserId())
-					.userName(post.getUsername())
-					.likeCount(post.getLikeCount())
-					.isLiked(post.getIsLiked())
-					.createdAt(post.getCreatedAt())
-					.updatedAt(post.getUpdatedAt())
-					.readCount(post.getReadCount() + redisReadCount)
-					.build();
-			})
+		Map<Long,Long> redisReadCounts = getReadCountFromRedisCache(postPage);
+
+		List<PostResponse> content = postPage.getContent().stream()
+			.map(post -> PostResponse.builder()
+			   .id(post.getId())
+			   .title(post.getTitle())
+			   .userId(post.getUserId())
+			   .userName(post.getUsername())
+			   .likeCount(post.getLikeCount())
+			   .isLiked(Boolean.TRUE.equals(post.getIsLiked()))
+			   .createdAt(post.getCreatedAt())
+			   .updatedAt(post.getUpdatedAt())
+			   .readCount(post.getReadCount() + redisReadCounts.getOrDefault(post.getId(), 0L))
+			   .build())
 			.collect(Collectors.toList());
+
 
 		return new PageImpl<>(content, pageable, postPage.getTotalElements());
 	}
 
-	private List<Long> getReadCountFromRedisCache(Page<PostWithLikeCountProjection> postPage) {
-		List<String> keys = postPage.getContent().stream()
-			.map(post -> ViewCountService.VIEW_COUNT_KEY + post.getId())
-			.collect(Collectors.toList());
-		List<Long> redisReadCounts = redisTemplate.opsForValue().multiGet(keys);
-		return redisReadCounts;
+	private Map<Long,Long> getReadCountFromRedisCache(Page<PostWithLikeCountProjection> postPage) {
+		List<Long> ids = postPage.getContent().stream()
+			.map(PostWithLikeCountProjection::getId)
+			.toList();
+		if(ids.isEmpty()) return Map.of();
+
+		List<String> keys = ids.stream()
+			.map(id -> ViewCountService.VIEW_COUNT_KEY + id)
+			.toList();
+		try {
+			List<Long> readCounts = redisTemplate.opsForValue().multiGet(keys);
+
+			HashMap<Long, Long> map = new HashMap<>();
+			for (int i = 0; i < ids.size(); i++) {
+				Long readCount = (readCounts != null && i < readCounts.size()) ? readCounts.get(i) : null;
+				map.put(ids.get(i), (readCount != null) ? readCount : 0L);
+			}
+			return map;
+		} catch (DataAccessException e) {
+			log.error("Redis 장애: {}", e.getMessage());
+			return ids.stream().collect(Collectors.toMap(id -> id, id -> 0L));
+		}
 	}
 
 	@Transactional(readOnly = true)

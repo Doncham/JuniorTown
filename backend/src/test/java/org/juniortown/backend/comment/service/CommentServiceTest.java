@@ -280,16 +280,14 @@ class CommentServiceTest {
 			.build();
 
 
-
-
 		when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 		when(postRepository.findById(POST_ID)).thenReturn(Optional.of(post));
 		when(commentRepository.findById(parentId)).thenReturn(Optional.empty());
 
 		// when, then
 		Assertions.assertThatThrownBy(() -> commentService.createComment(USER_ID, commentCreateRequest))
-			.isInstanceOf(CircularReferenceException.class)
-			.hasMessage(CircularReferenceException.MESSAGE);
+			.isInstanceOf(CommentNotFoundException.class)
+			.hasMessage(CommentNotFoundException.MESSAGE);
 		verify(commentRepository, never()).save(any(Comment.class));
 	}
 	@Test

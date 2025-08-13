@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.Index;
+
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long>, PostRepositoryCustom {
 	Page<Post> findAllByDeletedAtIsNull(Pageable pageable);
@@ -25,5 +27,16 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"WHERE p.deletedAt IS NULL " +
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
-	Page<PostWithLikeCountProjection> findAllWithLikeCount(@Param("userId") Long userId, Pageable pageable);
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForUser(@Param("userId") Long userId, Pageable pageable);
+
+	@Query(
+		"SELECT p.id AS id, p.title AS title, p.readCount AS readCount, u.name AS username, u.id AS userId, COUNT(l.id) AS likeCount, " +
+			"p.createdAt AS createdAt, p.updatedAt AS updatedAt " +
+			"FROM Post p " +
+			"JOIN p.user u " +
+			"LEFT JOIN Like l ON l.post.id = p.id " +
+			"WHERE p.deletedAt IS NULL " +
+			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
+	)
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable);
 }

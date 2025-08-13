@@ -54,7 +54,7 @@ import com.redis.testcontainers.RedisContainer;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class, TestClockNotMockConfig.class})
+@Import({RedisTestConfig.class, TestClockNotMockConfig.class})
 @Transactional
 @Testcontainers
 public class PostControllerPagingTest {
@@ -322,4 +322,31 @@ public class PostControllerPagingTest {
 			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
 			.andDo(print());
 	}
+
+	@Test
+	@DisplayName("글 목록 조회 - 첫 페이지 조회 성공(비회원)")
+	void get_posts_first_page_success_with_non_user() throws Exception {
+		// given
+		int page = 0; // 첫 페이지
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content", hasSize(10))) // 첫 페이지는 10개
+			.andExpect(jsonPath("$.totalElements").value(POST_COUNT)) // 전체 게시글 수
+			.andExpect(jsonPath("$.totalPages").value(6)) // 총 페이지 수
+			.andExpect(jsonPath("$.hasPrevious").value(false))
+			.andExpect(jsonPath("$.hasNext").value(true)) // 다음 페이지 있음
+			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
+			.andExpect(jsonPath("$.content[0].title").value("테스트 글 53")) // 첫 번째 게시글 제목
+			.andExpect(jsonPath("$.content[0].userId").value(testUser1.getId())) // 첫 번째 게시글 작성자 ID
+			.andExpect(jsonPath("$.content[0].userName").value(testUser1.getName())) // 첫 번째 게시글 작성자 이름
+			.andExpect(jsonPath("$.content[0].likeCount").value(0)) // 첫 번째 게시글 좋아요 수
+			.andExpect(jsonPath("$.content[0].readCount").value(0)) // 첫 번째 게시글 조회수
+			.andExpect(jsonPath("$.content[0].createdAt").exists()) // 첫 번째 게시글 생성일시
+			.andExpect(jsonPath("$.content[0].updatedAt").exists()) // 첫 번째 게시글 수정일시
+			.andExpect(jsonPath("$.content[0].isLiked").value(false)) // 첫 번째 게시글 좋아요 여부
+			.andDo(print());
+	}
+
 }
