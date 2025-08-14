@@ -15,6 +15,10 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
   // 댓글 등록
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     if (!commentContent.trim()) return;
     try {
       await axios.post('/api/comments', {

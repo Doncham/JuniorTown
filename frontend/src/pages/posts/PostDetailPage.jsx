@@ -1,81 +1,156 @@
-import { useState, useEffect } from 'react';
+// src/pages/posts/PostDetailPage.jsx
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Card, Spinner, Alert, Button } from 'react-bootstrap';
-import base64 from 'base-64';
-import CommentSection from './CommentPage'; // 댓글 컴포넌트 임포트
+import CommentSection from './CommentPage';
+import { useAuth } from '../../auth/AuthContext';
+
+// --------- 미니 아이콘 컴포넌트 (가벼운 라인 스타일) ----------
+const EyeIcon = ({ size = 18, className }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    className={className}
+    style={{ verticalAlign: '-2px' }}
+  >
+    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" strokeWidth="1.8" />
+    <circle cx="12" cy="12" r="3" strokeWidth="1.8" />
+  </svg>
+);
+
+const LikeButton = ({ isLiked, count, busy, onClick }) => (
+  <Button
+    variant={isLiked ? 'danger' : 'outline-danger'}
+    disabled={busy}
+    onClick={onClick}
+    className="d-inline-flex align-items-center"
+    style={{
+      borderRadius: 999,
+      padding: '6px 12px',
+      fontWeight: 600,
+      transition: 'transform 120ms ease',
+      boxShadow: isLiked ? '0 2px 6px rgba(220,53,69,.25)' : 'none'
+    }}
+    aria-pressed={isLiked}
+    aria-label={isLiked ? '좋아요 취소' : '좋아요'}
+  >
+    <span
+      style={{
+        fontSize: 16,
+        marginRight: 8,
+        transform: isLiked ? 'scale(1.05)' : 'none',
+        transition: 'transform 120ms ease'
+      }}
+    >
+      {isLiked ? '❤️' : '🤍'}
+    </span>
+    <span style={{ minWidth: 28, textAlign: 'right' }}>
+      {Number(count ?? 0).toLocaleString()}
+    </span>
+  </Button>
+);
 
 const PostDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, token } = useAuth();
 
   const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);      // 초기 로딩
   const [error, setError] = useState(null);
-  // 로그인 사용자 id 저장
-  const [myUserId, setMyUserId] = useState(null);
+  const [likeBusy, setLikeBusy] = useState(false);   // 좋아요 처리 중 잠금
 
-  // 게시글 조회 및 내 userId 파싱
+  const myUserId = useMemo(() => user?.id ?? null, [user]);
+
+  // 최신 요청만 반영하기 위한 ID
+  const lastLikeReqIdRef = useRef(0);
+
+  // 게시글 조회
+  const fetchPost = useCallback(async () => {
+    if (!post) setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`/api/posts/details/${id}`, {
+        headers: token ? { Authorization: token } : undefined,
+      });
+      setPost(res.data);
+    } catch (err) {
+      setError('해당 게시물을 불러오는 데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, token]);
+
   useEffect(() => {
-    const fetchPost = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('jwt');
-        // JWT 파싱 (try-catch로 에러 방어 추천)
-        try {
-          const payload = JSON.parse(base64.decode(token.split('.')[1]));
-          setMyUserId(payload.userId);
-        } catch (error) {
-          console.error('JWT 파싱 오류:', error);
-        }
-        let loginUserId = null;
-        if (token) {
-          const payload = JSON.parse(base64.decode(token.split('.')[1]));
-          loginUserId = payload.userId;
-          setMyUserId(loginUserId);
-        }
-        // GET /api/posts/details/{id}
-        const response = await axios.get(`/api/posts/details/${id}`, {
-          headers: {
-            'Authorization': `${token}`,
-          },
-        });
-        setPost(response.data);
-      } catch (err) {
-        setError('해당 게시물을 불러오는 데 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPost();
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchPost]);
 
   const handleBack = () => navigate(-1);
+  const handleEdit = () => navigate(`/posts/edit/${id}`);
 
-  // 게시글 수정 페이지로 이동
-  const handleEdit = () => {
-    navigate(`/posts/edit/${id}`);
-  };
-
-  // 게시글 삭제 (선택)
   const handleDelete = async () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
-      const token = localStorage.getItem('jwt');
       await axios.delete(`/api/posts/${id}`, {
-        headers: { 'Authorization': `${token}` },
+        headers: token ? { Authorization: token } : undefined,
       });
       alert('게시글이 삭제되었습니다.');
       navigate('/posts');
-    } catch (err) {
+    } catch {
       alert('게시물 삭제에 실패했습니다.');
     }
   };
 
-  // 내 userId와 게시글 userId 비교
-  const isOwner = post && myUserId && String(post.userId) === String(myUserId);
+  // 좋아요 토글 (낙관적 업데이트 + 중복 클릭 방지 + 최신 응답만 반영)
+  const handleLike = useCallback(async () => {
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (!post || likeBusy) return;
 
+    setLikeBusy(true);
+    const reqId = ++lastLikeReqIdRef.current;
+
+    const prevIsLiked = !!post.isLiked;
+    const prevCount = Number(post.likeCount ?? 0);
+
+    // 낙관적 반영
+    const nextIsLiked = !prevIsLiked;
+    const nextCount = nextIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    setPost(p => (p ? { ...p, isLiked: nextIsLiked, likeCount: nextCount } : p));
+
+    try {
+      const res = await axios.post(`/api/posts/likes/${post.id}`, null, {
+        headers: { Authorization: token },
+      });
+      // 최신 요청만 반영
+      if (reqId === lastLikeReqIdRef.current) {
+        const serverIsLiked = !!res.data?.isLiked;
+        const fixedCount = serverIsLiked
+          ? (prevIsLiked ? prevCount : prevCount + 1)
+          : (prevIsLiked ? Math.max(0, prevCount - 1) : prevCount);
+
+        setPost(p => (p ? { ...p, isLiked: serverIsLiked, likeCount: fixedCount } : p));
+      }
+    } catch {
+      if (reqId === lastLikeReqIdRef.current) {
+        // 실패 롤백
+        setPost(p => (p ? { ...p, isLiked: prevIsLiked, likeCount: prevCount } : p));
+        alert('좋아요 처리에 실패했습니다.');
+      }
+    } finally {
+      if (reqId === lastLikeReqIdRef.current) setLikeBusy(false);
+    }
+  }, [post, token, navigate, likeBusy]);
+
+  const isOwner = post && myUserId && String(post.userId) === String(myUserId);
 
   return (
     <Container className="mt-4">
@@ -85,13 +160,11 @@ const PostDetailPage = () => {
 
       {loading && (
         <div className="d-flex justify-content-center my-5">
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </Spinner>
+          <Spinner animation="border" role="status" />
         </div>
       )}
 
-      {error && (
+      {error && !loading && (
         <Alert variant="danger" className="my-3">
           {error}
         </Alert>
@@ -101,40 +174,72 @@ const PostDetailPage = () => {
         <>
           {post ? (
             <Card className="shadow-sm">
+              {/* ===== 헤더: 제목 / 메타 / 좋아요 버튼 ===== */}
               <Card.Header className="bg-white border-0">
-                <h4 className="mb-0">{post.title}</h4>
-                <small className="text-muted">
-                  작성일:{" "}
-                  {new Date(post.createdAt).toLocaleString("ko-KR", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </small>
-                <small className="text-muted ms-2">
-                  👁️ {post.readCount?.toLocaleString()}회
-                </small>
+                <div className="d-flex align-items-start justify-content-between gap-3">
+                  <div className="flex-grow-1">
+                    <h4 className="mb-2" style={{ wordBreak: 'keep-all' }}>
+                      {post.title}
+                    </h4>
+
+                    {/* 메타 라인: 작성일 / 조회수 */}
+                    <div className="d-flex flex-wrap align-items-center gap-1">
+                      <span
+                        className="badge rounded-pill text-bg-light"
+                        style={{ fontWeight: 500 }}
+                        title="작성일"
+                      >
+                        {new Date(post.createdAt).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+
+                      <span className="text-muted">•</span>
+
+                      <span
+                        className="badge rounded-pill text-bg-light d-inline-flex align-items-center"
+                        style={{ gap: 6, fontWeight: 500 }}
+                        title="조회수"
+                      >
+                        <EyeIcon />
+                        {post.readCount?.toLocaleString()}회
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 좋아요 버튼 */}
+                  <LikeButton
+                    isLiked={!!post.isLiked}
+                    count={post.likeCount}
+                    busy={likeBusy}
+                    onClick={handleLike}
+                  />
+                </div>
               </Card.Header>
+
+              {/* ===== 본문 ===== */}
               <Card.Body>
-                <Card.Text style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                <Card.Text style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
                   {post.content}
                 </Card.Text>
+
+                {/* 댓글 섹션 */}
                 <div className="mt-5">
                   <CommentSection
                     postId={post.id}
                     comments={post.comments}
                     myUserId={myUserId}
-                    refreshPost={() => {
-                      // 댓글 등록/수정/삭제 후, 게시글/댓글 전체 데이터를 새로 불러오는 함수
-                      fetchPost();
-                    }}
+                    refreshPost={fetchPost}
                   />
                 </div>
               </Card.Body>
+
+              {/* ===== 푸터: 소유자 액션 ===== */}
               <Card.Footer className="bg-white border-0 text-end">
-                {/* 소유자만 수정/삭제 버튼 노출 */}
                 {isOwner ? (
                   <>
                     <Button variant="outline-primary" onClick={handleEdit} className="me-2">

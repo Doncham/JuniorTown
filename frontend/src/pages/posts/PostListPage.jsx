@@ -23,12 +23,12 @@ const PostListPage = () => {
       setLoading(true);
       setError(null);
       try {
-        if (!token) {
-          alert('로그인이 필요합니다.');
-          navigate('/login', { replace: true });
-          return; // Stop fetching posts if not logged in
-        }
-        // 서버가 쿼리 파라미터로 page를 받는 걸 권장
+        // if (!token) {
+        //   alert('로그인이 필요합니다.');
+        //   navigate('/login', { replace: true });
+        //   return; // Stop fetching posts if not logged in
+        // }
+        //서버가 쿼리 파라미터로 page를 받는 걸 권장
         const response = await axios.get(`/api/posts/${page}`, {
           headers: {
             'Authorization': `${token}`,
@@ -38,6 +38,7 @@ const PostListPage = () => {
         setPosts(response.data.content);
         setTotalPages(response.data.totalPages);
       } catch (err) {
+        console.error('게시물 목록 조회 실패:', err);
         setError('게시물 목록을 가져오지 못했습니다.');
       } finally {
         setLoading(false);
