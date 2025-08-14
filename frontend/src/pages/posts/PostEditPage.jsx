@@ -5,11 +5,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Form, Button, Spinner, Alert } from 'react-bootstrap';
 import base64 from 'base-64';
+import { useAuth } from '../../auth/AuthContext'; // 인증 컨텍스트 임포트
 
 const PostEditPage = () => {
   // 1. URL에서 id 파라미터를 추출
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth(); // 인증 토큰 가져오기
 
   // 2. 컴포넌트 상태 정의
   const [title, setTitle] = useState('');       // 수정할 게시물의 제목
@@ -22,8 +24,6 @@ const PostEditPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const token = localStorage.getItem('jwt');
-      
         const response = await axios.get(`/api/posts/details/${id}`, {
           headers: {
             'Authorization': `${token}`,
@@ -49,8 +49,6 @@ const PostEditPage = () => {
     setSaving(true);
     setError(null);
 
-    const token = localStorage.getItem('jwt');
-
     if (!token) {
       alert('로그인이 필요합니다.');
       navigate('/login', { replace: true });
@@ -58,7 +56,7 @@ const PostEditPage = () => {
     }
     try {
       // PUT /api/posts/{id}로 수정 요청
-  
+
       await axios.patch(`/api/posts/${id}`, {
         title,
         content,

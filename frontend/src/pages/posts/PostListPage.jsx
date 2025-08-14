@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Table, Spinner, Alert, Button } from 'react-bootstrap';
 import Pagination from 'react-bootstrap/Pagination';
-
+import { useAuth } from '../../auth/AuthContext'; // 인증 컨텍스트 임포트
 const GROUP_SIZE = 10;
 
 const PostListPage = () => {
   const navigate = useNavigate();
+  const { token } = useAuth(); // 인증 토큰 가져오기
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,6 @@ const PostListPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('jwt');
         if (!token) {
           alert('로그인이 필요합니다.');
           navigate('/login', { replace: true });
@@ -65,37 +65,6 @@ const PostListPage = () => {
     );
   }
 
-  const handleLike = async (postId, currentIsLiked, currentLikeCount) => {
-    const token = localStorage.getItem('jwt');
-    if (!token) {
-      alert('로그인이 필요합니다.');
-      navigate('/login', { replace: true });
-      return; // Stop if not logged in
-    }
-    try {
-      const response = await axios.post(`/api/posts/likes/${postId}`, null, {
-        headers: { 'Authorization': `${token}` },
-      });
-      const { isLiked } = response.data;
-
-      // posts 배열에서 해당 post의 isLiked, likeCount 업데이트
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-              ...post,
-              isLiked: isLiked,
-              likeCount: isLiked
-                ? currentLikeCount + 1
-                : Math.max(0, currentLikeCount - 1),
-            }
-            : post
-        )
-      );
-    } catch (err) {
-      alert('좋아요 처리에 실패했습니다.');
-    }
-  };
 
   return (
     <Container className="mt-4">
@@ -167,7 +136,6 @@ const PostListPage = () => {
                           color: post.isLiked ? '#dc3545' : '#adb5bd',
                         }}
                         aria-label={post.isLiked ? '좋아요 취소' : '좋아요'}
-                        onClick={() => handleLike(post.id, post.isLiked, post.likeCount)}
                       >
                         {post.isLiked ? '❤️' : '🤍'}
                       </button>

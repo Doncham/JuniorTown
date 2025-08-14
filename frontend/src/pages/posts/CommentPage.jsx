@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Form, Card } from 'react-bootstrap';
 import axios from 'axios';
+import { useAuth } from '../../auth/AuthContext'; // 인증 컨텍스트 임포트
 
 
 function CommentSection({ postId, comments, myUserId, refreshPost }) {
@@ -10,13 +11,12 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
   const [editingId, setEditingId] = useState(null); // 수정 중인 댓글 id
   const [editingContent, setEditingContent] = useState('');
   const [replyParentId, setReplyParentId] = useState(null); // 대댓글 입력창 표시용 parent id
-
+  const { token } = useAuth(); // 인증 토큰 가져오기
   // 댓글 등록
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentContent.trim()) return;
     try {
-      const token = localStorage.getItem('jwt');
       await axios.post('/api/comments', {
         postId,
         content: commentContent,
@@ -35,7 +35,6 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
     e.preventDefault();
     if (!replyContent.trim()) return;
     try {
-      const token = localStorage.getItem('jwt');
       await axios.post('/api/comments', {
         postId,
         content: replyContent,
@@ -54,7 +53,6 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
   const handleDelete = async (commentId) => {
     if (!window.confirm('댓글을 삭제할까요?')) return;
     try {
-      const token = localStorage.getItem('jwt');
       await axios.delete(`/api/comments/${commentId}`, {
         headers: { Authorization: token },
       });
@@ -70,7 +68,6 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
     e.preventDefault();
     if (!editingContent.trim()) return;
     try {
-      const token = localStorage.getItem('jwt');
       await axios.patch(`/api/comments/${commentId}`, {
         content: editingContent,
       }, { headers: { Authorization: token } });

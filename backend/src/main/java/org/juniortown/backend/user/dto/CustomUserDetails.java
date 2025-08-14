@@ -33,8 +33,10 @@ public class CustomUserDetails implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return user.getEmail();
+		return user.getName();
 	}
+
+	public String getUserEmail() {return user.getEmail();}
 
 	public Long getUserId() {
 		return user.getId();

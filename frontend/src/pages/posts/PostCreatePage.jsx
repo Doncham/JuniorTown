@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
 import axios from 'axios'; // axios를 import
+import { useAuth } from '../../auth/AuthContext.jsx'; // 인증 컨텍스트 임포트
 
 const PostCreatePage = () => {
   const navigate = useNavigate();
+  const { token } = useAuth(); // 인증 토큰 가져오기
 
   // ① 제목과 내용을 담을 상태 변수 선언
   const [title, setTitle] = useState('');
@@ -15,7 +17,6 @@ const PostCreatePage = () => {
     const postData = { title, content };
 
     try {
-      const token = localStorage.getItem('jwt');
       if (!token) {
         alert('로그인이 필요합니다.');
         navigate('/login', { replace: true });
