@@ -21,7 +21,7 @@ export let options = {
 }
 
 export default function () {
-    const pageId = getRandomPageId(1, 100);
+    const pageId = getRandomPageId(0,1);
     const payload = JSON.stringify({
         userId: pageId
     });
@@ -34,6 +34,6 @@ export default function () {
     let response = http.get('http://host.docker.internal:8080/api/posts/' + pageId, payload, params);
 
     check(response, {
-        'status is 204': (r) => r.status === 204,
+        'status is 200': (r) => r.status === 200,
     })
 }
