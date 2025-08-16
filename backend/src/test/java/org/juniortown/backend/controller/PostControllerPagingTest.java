@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.juniortown.backend.config.RedisTestConfig;
-import org.juniortown.backend.config.SyncConfig;
-import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.config.TestClockNotMockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
@@ -24,13 +22,9 @@ import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.repository.UserRepository;
 import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,14 +41,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.testcontainers.RedisContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class, TestClockNotMockConfig.class})
+@Import({RedisTestConfig.class, TestClockNotMockConfig.class})
 @Transactional
 @Testcontainers
 public class PostControllerPagingTest {
@@ -322,4 +315,31 @@ public class PostControllerPagingTest {
 			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
 			.andDo(print());
 	}
+
+	@Test
+	@DisplayName("글 목록 조회 - 첫 페이지 조회 성공(비회원)")
+	void get_posts_first_page_success_with_non_user() throws Exception {
+		// given
+		int page = 0; // 첫 페이지
+
+		// expected
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.content", hasSize(10))) // 첫 페이지는 10개
+			.andExpect(jsonPath("$.totalElements").value(POST_COUNT)) // 전체 게시글 수
+			.andExpect(jsonPath("$.totalPages").value(6)) // 총 페이지 수
+			.andExpect(jsonPath("$.hasPrevious").value(false))
+			.andExpect(jsonPath("$.hasNext").value(true)) // 다음 페이지 있음
+			.andExpect(jsonPath("$.page").value(0)) // 현재 페이지
+			.andExpect(jsonPath("$.content[0].title").value("테스트 글 53")) // 첫 번째 게시글 제목
+			.andExpect(jsonPath("$.content[0].userId").value(testUser1.getId())) // 첫 번째 게시글 작성자 ID
+			.andExpect(jsonPath("$.content[0].userName").value(testUser1.getName())) // 첫 번째 게시글 작성자 이름
+			.andExpect(jsonPath("$.content[0].likeCount").value(0)) // 첫 번째 게시글 좋아요 수
+			.andExpect(jsonPath("$.content[0].readCount").value(0)) // 첫 번째 게시글 조회수
+			.andExpect(jsonPath("$.content[0].createdAt").exists()) // 첫 번째 게시글 생성일시
+			.andExpect(jsonPath("$.content[0].updatedAt").exists()) // 첫 번째 게시글 수정일시
+			.andExpect(jsonPath("$.content[0].isLiked").value(false)) // 첫 번째 게시글 좋아요 여부
+			.andDo(print());
+	}
+
 }

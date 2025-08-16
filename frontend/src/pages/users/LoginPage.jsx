@@ -1,10 +1,12 @@
-import axios from 'axios';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../../auth/AuthContext.jsx'
 
 export function LoginPage() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setCredentials({
@@ -19,9 +21,10 @@ export function LoginPage() {
     axios.post('/api/auth/login', credentials)
       .then(res => {
         const token = res.headers['authorization'];
-        localStorage.setItem('jwt', token); 
-        axios.defaults.headers.common['Authorization'] = token;
-
+        if (!token) {
+          throw new Error('토큰이 없습니다.');
+        }
+        login(token);
         alert('로그인에 성공했습니다.');
         // 로그인 성공 후 홈 페이지로 리다이렉트
         navigate('/', { replace: true });

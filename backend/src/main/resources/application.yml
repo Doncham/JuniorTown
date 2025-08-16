@@ -29,6 +29,15 @@ spring:
   jwt:
     secret: ${JWT_SECRET_KEY}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ["health", "prometheus"]
+  endpoint:
+    health:
+      show-details: always
+
 
 
 

@@ -117,7 +117,7 @@ class PostControllerTest {
 
 		String json = objectMapper.writeValueAsString(request);
 
-		String ghostToken = jwtUtil.createJwt(100L, "test@gmail.com", "ROLE_USER", 1000L);
+		String ghostToken = jwtUtil.createJwt(100L, "test@gmail.com","doncham", "ROLE_USER", 1000L);
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/posts")
@@ -262,7 +262,7 @@ class PostControllerTest {
 			.build();
 		User saveUser2 = userRepository.save(user2);
 
-		String jwt = "Bearer " + jwtUtil.createJwt(saveUser2.getId(), saveUser2.getEmail(), saveUser2.getRole(), 10000L);
+		String jwt = "Bearer " + jwtUtil.createJwt(saveUser2.getId(), saveUser2.getEmail(),"doncham", saveUser2.getRole(), 10000L);
 
 		// Forbidden: 403
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/posts/{postId}", postId)
@@ -350,7 +350,7 @@ class PostControllerTest {
 			.build();
 		User saveUser2 = userRepository.save(user2);
 
-		String jwt = "Bearer " + jwtUtil.createJwt(saveUser2.getId(), saveUser2.getEmail(), saveUser2.getRole(), 10000L);
+		String jwt = "Bearer " + jwtUtil.createJwt(saveUser2.getId(), saveUser2.getEmail(),"doncham", saveUser2.getRole(), 10000L);
 
 		PostEdit postEdit = PostEdit.builder()
 			.title("수정된 제목")

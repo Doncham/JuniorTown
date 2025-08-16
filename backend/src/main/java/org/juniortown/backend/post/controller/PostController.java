@@ -61,10 +61,10 @@ public class PostController {
 
 	// 게시글 목록 조회, 페이지네이션 적용
 	@GetMapping("/posts/{page}")
-	public ResponseEntity<PageResponse<PostResponse>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable int page) {
-		Long userId = customUserDetails.getUserId();
-		// null체크
-
+	public ResponseEntity<PageResponse<PostResponse>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails,
+		@PathVariable int page
+	) {
+		Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
 	 	Page<PostResponse> posts = postService.getPosts(userId, page);
 		PageResponse<PostResponse> response = new PageResponse<>(posts);
 		return ResponseEntity.ok(response);

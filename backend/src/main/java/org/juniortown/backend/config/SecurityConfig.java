@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -76,7 +77,9 @@ public class SecurityConfig {
 		//경로별 인가 작업
 		http
 			.authorizeHttpRequests((auth) -> auth
-				.requestMatchers("/api/auth/login", "/", "/api/auth/signup","/swagger-ui/**","/v3/api-docs/**","/api/posts/details/**").permitAll()
+				.requestMatchers("/api/auth/login", "/", "/api/auth/signup","/swagger-ui/**","/v3/api-docs/**",
+					"/api/posts/details/**", "/actuator/health","/actuator/prometheus").permitAll()
+				.requestMatchers(RegexRequestMatcher.regexMatcher("/api/posts/\\d+")).permitAll()
 				.requestMatchers("/admin").hasRole("ADMIN")
 				.anyRequest().authenticated());
 

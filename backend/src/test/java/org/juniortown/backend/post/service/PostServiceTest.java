@@ -207,7 +207,7 @@ class PostServiceTest {
 	void getPosts_returnsMappedPage() {
 		// given
 		int page = 0;
-		Sort sort = Sort.by("createdAt").descending();
+		Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
 
 		PostWithLikeCountProjection post1 = mock(PostWithLikeCountProjection.class);
@@ -220,13 +220,52 @@ class PostServiceTest {
 		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAllWithLikeCount(user.getId(), expectedPageable)).thenReturn(mockPage);
+		when(postRepository.findAllWithLikeCountForUser(user.getId(), expectedPageable)).thenReturn(mockPage);
 		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
 		Page<PostResponse> result = postService.getPosts(user.getId(), page);
 
 		// then
-		verify(postRepository).findAllWithLikeCount(user.getId(), expectedPageable);
+		verify(postRepository).findAllWithLikeCountForUser(user.getId(), expectedPageable);
+
+		assertThat(result.getTotalElements()).isEqualTo(2);
+		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
+		assertThat(result.getTotalPages()).isEqualTo(1);
+		// 현재 페이지 번호
+		assertThat(result.getNumber()).isEqualTo(0);
+		// 현재 페이지에 들어있는 요소의 개수
+		assertThat(result.getNumberOfElements()).isEqualTo(2);
+
+		List<PostResponse> content = result.getContent();
+		assertThat(content).hasSize(2);
+		assertThat(content.get(0).getTitle()).isEqualTo("TA");
+		assertThat(content.get(1).getTitle()).isEqualTo("TB");
+	}
+
+	@Test
+	@DisplayName("비회원 게시글 페이지 조회 성공")
+	void getPosts_with_non_user() {
+		// given
+		int page = 0;
+		Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
+
+		PostWithLikeCountProjection post1 = mock(PostWithLikeCountProjection.class);
+		when(post1.getTitle()).thenReturn("TA");
+		PostWithLikeCountProjection post2 = mock(PostWithLikeCountProjection.class);
+		when(post2.getTitle()).thenReturn("TB");
+
+		int totalElements = 2;
+
+		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
+		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
+		when(postRepository.findAllWithLikeCountForNonUser(expectedPageable)).thenReturn(mockPage);
+		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
+		// when
+		Page<PostResponse> result = postService.getPosts(null, page);
+
+		// then
+		verify(postRepository).findAllWithLikeCountForNonUser(expectedPageable);
 
 		assertThat(result.getTotalElements()).isEqualTo(2);
 		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
@@ -247,11 +286,10 @@ class PostServiceTest {
 	void getPosts_emptyPage() {
 		//given
 		int page = 0;
-		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 		Page<PostWithLikeCountProjection> emptyPage = Page.empty(pageable);
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAllWithLikeCount(user.getId(),pageable)).thenReturn(emptyPage);
-		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
+		when(postRepository.findAllWithLikeCountForUser(user.getId(),pageable)).thenReturn(emptyPage);
 
 		// when
 		Page<PostResponse> result = postService.getPosts(user.getId(), page);

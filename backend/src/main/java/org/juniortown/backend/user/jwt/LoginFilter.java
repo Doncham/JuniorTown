@@ -7,7 +7,6 @@ import java.util.Iterator;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.response.LoginResultDTO;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -48,6 +47,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
 		CustomUserDetails customUserDetails = (CustomUserDetails)authentication.getPrincipal();
+		String userEmail = customUserDetails.getUserEmail();
 		String username = customUserDetails.getUsername();
 		Long userId = customUserDetails.getUserId();
 
@@ -57,7 +57,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
 		String role = auth.getAuthority();
 
-		String token = jwtUtil.createJwt(userId, username, role, 1000 * 60 * 60 * 24L ); // 24시간 유효한 토큰 생성
+		String token = jwtUtil.createJwt(userId, userEmail, username, role, 1000 * 60 * 60 * 24L ); // 24시간 유효한 토큰 생성
 
 		response.addHeader("Authorization", "Bearer " + token);
 
