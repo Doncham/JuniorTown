@@ -31,7 +31,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 
 	@Query(
 		"SELECT p.id AS id, p.title AS title, p.readCount AS readCount, u.name AS username, u.id AS userId, COUNT(l.id) AS likeCount, " +
-			"p.createdAt AS createdAt, p.updatedAt AS updatedAt " +
+			"p.createdAt AS createdAt, p.updatedAt AS updatedAt, false AS isLiked " +
 			"FROM Post p " +
 			"JOIN p.user u " +
 			"LEFT JOIN Like l ON l.post.id = p.id " +

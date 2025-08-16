@@ -74,9 +74,7 @@ const PostDetailPage = () => {
     if (!post) setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`/api/posts/details/${id}`, {
-        headers: token ? { Authorization: token } : undefined,
-      });
+      const res = await axios.get(`/api/posts/details/${id}`);
       setPost(res.data);
     } catch (err) {
       setError('해당 게시물을 불러오는 데 실패했습니다.');
@@ -96,9 +94,7 @@ const PostDetailPage = () => {
   const handleDelete = async () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     try {
-      await axios.delete(`/api/posts/${id}`, {
-        headers: token ? { Authorization: token } : undefined,
-      });
+      await axios.delete(`/api/posts/${id}`);
       alert('게시글이 삭제되었습니다.');
       navigate('/posts');
     } catch {
@@ -127,9 +123,7 @@ const PostDetailPage = () => {
     setPost(p => (p ? { ...p, isLiked: nextIsLiked, likeCount: nextCount } : p));
 
     try {
-      const res = await axios.post(`/api/posts/likes/${post.id}`, null, {
-        headers: { Authorization: token },
-      });
+      const res = await axios.post(`/api/posts/likes/${post.id}`);
       // 최신 요청만 반영
       if (reqId === lastLikeReqIdRef.current) {
         const serverIsLiked = !!res.data?.isLiked;

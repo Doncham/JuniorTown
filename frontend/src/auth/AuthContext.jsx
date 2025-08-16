@@ -23,7 +23,7 @@ export default function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     const payload = saved ? parseJwt(saved) : null;
-    return payload ? { id: payload.userId, email: payload.email, username: payload.username } : null;
+    return payload ? { id: payload.userId, email: payload.email, username: payload.username, userRole: payload.userRole } : null;
   });
   const [ready, setReady] = useState(false); // 초기 복원 완료 여부
 
@@ -34,7 +34,7 @@ export default function AuthProvider({ children }) {
       axios.defaults.headers.common['Authorization'] = token;
       const payload = parseJwt(token);
       setUser(payload
-        ? { id: payload.userId, email: payload.email, userRole: payload.userRole, username: payload.username ?? payload.name }
+        ? { id: payload.userId, email: payload.email, userRole: payload.userRole, username: payload.username ?? payload.username }
         : null
       );
     } else {

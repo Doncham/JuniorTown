@@ -78,7 +78,7 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests((auth) -> auth
 				.requestMatchers("/api/auth/login", "/", "/api/auth/signup","/swagger-ui/**","/v3/api-docs/**",
-					"/api/posts/details/**", "/actuator/**").permitAll()
+					"/api/posts/details/**", "/actuator/health","/actuator/prometheus").permitAll()
 				.requestMatchers(RegexRequestMatcher.regexMatcher("/api/posts/\\d+")).permitAll()
 				.requestMatchers("/admin").hasRole("ADMIN")
 				.anyRequest().authenticated());

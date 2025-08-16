@@ -198,7 +198,7 @@ class AuthControllerTest {
 
 		// Authorization 헤더에서 JWT 토큰을 추출하고 검증
 		String Token = mvcResult.getResponse().getHeader("Authorization");
-		String extractedUsername = jwtUtil.getUsername(Token.split(" ")[1]);
+		String extractedUsername = jwtUtil.getUserEmail(Token.split(" ")[1]);
 		Assertions.assertEquals("init@gmail.com", extractedUsername);
 		Assertions.assertFalse(jwtUtil.isExpired(Token.split(" ")[1]));
 

@@ -40,15 +40,17 @@ public class JWTFilter extends OncePerRequestFilter {
 			filterChain.doFilter(request, response);
 			return;
 		}
-
+		String email = jwtUtil.getUserEmail(token);
 		String username = jwtUtil.getUsername(token);
 		String role = jwtUtil.getRole(token);
 		Long userId = jwtUtil.getUserId(token);
 
+
 		//userEntity를 생성하여 값 set
 		User user = User.builder()
 			.id(userId)
-			.email(username)
+			.email(email)
+			.name(username)
 			.role(role)
 			.build();
 

@@ -22,16 +22,13 @@ export let options = {
 
 export default function () {
     const pageId = getRandomPageId(0,1);
-    const payload = JSON.stringify({
-        userId: pageId
-    });
     const params = {
         headers: {
             'Content-Type': 'application/json',
         },
     };
 
-    let response = http.get('http://host.docker.internal:8080/api/posts/' + pageId, payload, params);
+    let response = http.get('http://host.docker.internal:8080/api/posts/' + pageId, params);
 
     check(response, {
         'status is 200': (r) => r.status === 200,

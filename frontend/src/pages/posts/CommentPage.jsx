@@ -25,7 +25,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
         postId,
         content: commentContent,
         parentId: null,
-      }, { headers: { Authorization: token } });
+      });
       setCommentContent('');
       refreshPost(); // 게시글 및 댓글 데이터 새로고침
     } catch (err) {
@@ -43,7 +43,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
         postId,
         content: replyContent,
         parentId,
-      }, { headers: { Authorization: token } });
+      });
       setReplyContent('');
       setReplyParentId(null);
       refreshPost();
@@ -57,9 +57,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
   const handleDelete = async (commentId) => {
     if (!window.confirm('댓글을 삭제할까요?')) return;
     try {
-      await axios.delete(`/api/comments/${commentId}`, {
-        headers: { Authorization: token },
-      });
+      await axios.delete(`/api/comments/${commentId}`);
       refreshPost();
     } catch (err) {
       console.error('댓글 삭제 실패:', err);
@@ -74,7 +72,7 @@ function CommentSection({ postId, comments, myUserId, refreshPost }) {
     try {
       await axios.patch(`/api/comments/${commentId}`, {
         content: editingContent,
-      }, { headers: { Authorization: token } });
+      });
       setEditingId(null);
       setEditingContent('');
       refreshPost();

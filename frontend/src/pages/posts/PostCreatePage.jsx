@@ -23,9 +23,7 @@ const PostCreatePage = () => {
         return;
       }
       const response = await axios.post('/api/posts', postData, {
-        headers: {
-          'Authorization': `${token}`,
-        },
+
       });
 
       // const result = response.data;

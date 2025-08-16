@@ -15,6 +15,10 @@ import io.jsonwebtoken.Jwts;
 public class JWTUtil {
 
 	private final SecretKey secretKey;
+	private static final String CLAIM_USER_ID = "userId";
+	private static final String CLAIM_EMAIL = "email";
+	private static final String CLAIM_USERNAME = "username";
+	private static final String CLAIM_ROLE = "role";
 
 	public JWTUtil(@Value("${spring.jwt.secret}")String secret) {
 		secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
@@ -42,10 +46,10 @@ public class JWTUtil {
 	public String createJwt(Long id, String email, String username, String role, Long expiredMs) {
 
 		return Jwts.builder()
-			.claim("userId", id)
-			.claim("email", email)
-			.claim("username", username)
-			.claim("role", role)
+			.claim(CLAIM_USER_ID, id)
+			.claim(CLAIM_EMAIL, email)
+			.claim(CLAIM_USERNAME, username)
+			.claim(CLAIM_ROLE, role)
 			.issuedAt(new Date(System.currentTimeMillis()))
 			.expiration(new Date(System.currentTimeMillis() + expiredMs))
 			.signWith(secretKey)

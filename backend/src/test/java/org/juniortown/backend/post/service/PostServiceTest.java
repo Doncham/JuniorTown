@@ -259,11 +259,10 @@ class PostServiceTest {
 
 		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
-		when(user.getId()).thenReturn(null);
 		when(postRepository.findAllWithLikeCountForNonUser(expectedPageable)).thenReturn(mockPage);
 		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
-		Page<PostResponse> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(null, page);
 
 		// then
 		verify(postRepository).findAllWithLikeCountForNonUser(expectedPageable);

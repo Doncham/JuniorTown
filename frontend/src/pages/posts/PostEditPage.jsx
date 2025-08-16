@@ -24,11 +24,7 @@ const PostEditPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`/api/posts/details/${id}`, {
-          headers: {
-            'Authorization': `${token}`,
-          },
-        });
+        const response = await axios.get(`/api/posts/details/${id}`);
         // 성공적으로 데이터를 받아오면 title과 content를 초기화
         setTitle(response.data.title);
         setContent(response.data.content);
@@ -60,11 +56,8 @@ const PostEditPage = () => {
       await axios.patch(`/api/posts/${id}`, {
         title,
         content,
-      }, {
-        headers: {
-          'Authorization': `${token}`,
-        },
-      });
+      },
+      );
       // 수정이 완료되면 상세 페이지로 이동
       navigate(`/posts/${id}`, { replace: true });
     } catch (err) {
