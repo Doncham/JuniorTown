@@ -1,5 +1,6 @@
 package org.juniortown.backend.dummyData;
 
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
@@ -39,6 +40,7 @@ public class DummyDataInit implements CommandLineRunner {
 			.title("Dummy Post Title")
 			.content("This is a dummy post content.")
 			.user(user)
+			.category(Category.NOTICE)
 			.build();
 		postRepository.save(testPost1);
 
@@ -46,6 +48,7 @@ public class DummyDataInit implements CommandLineRunner {
 			.title("Another Dummy Post Title")
 			.content("This is another dummy post content.")
 			.user(user)
+			.category(Category.NOTICE)
 			.build();
 		postRepository.save(testPost2);
 	}

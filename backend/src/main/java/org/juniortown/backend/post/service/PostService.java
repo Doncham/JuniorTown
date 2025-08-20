@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.juniortown.backend.comment.dto.response.CommentsInPost;
 import org.juniortown.backend.comment.entity.Comment;
@@ -18,6 +17,7 @@ import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
@@ -50,7 +50,6 @@ public class PostService {
 	private final CommentRepository commentRepository;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
-	private final static int PAGE_SIZE = 10;
 
 	@Transactional
 	public PostResponse create(Long userId, PostCreateRequest postCreateRequest) {
@@ -92,12 +91,12 @@ public class PostService {
 		return PostResponse.from(post);
 	}
 	@Transactional(readOnly = true)
-	public Page<PostResponse> getPosts(Long userId, int page) {
-		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+	public Page<PostResponse> getPosts(Long userId, int page, int size, Category category) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 
 		Page<PostWithLikeCountProjection> postPage = (userId == null)
-			? postRepository.findAllWithLikeCountForNonUser(pageable)
-			: postRepository.findAllWithLikeCountForUser(userId, pageable);
+			? postRepository.findAllWithLikeCountForNonUser(pageable, category)
+			: postRepository.findAllWithLikeCountForUser(userId, pageable, category);
 
 		Map<Long,Long> redisReadCounts = getReadCountFromRedisCache(postPage);
 

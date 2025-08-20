@@ -8,6 +8,7 @@ import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.service.PostService;
 import org.juniortown.backend.post.service.ViewCountService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -60,12 +62,14 @@ public class PostController {
 	}
 
 	// 게시글 목록 조회, 페이지네이션 적용
-	@GetMapping("/posts/{page}")
+	@GetMapping("/posts")
 	public ResponseEntity<PageResponse<PostResponse>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-		@PathVariable int page
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size,
+		@RequestParam(defaultValue = "NOTICE") Category category
 	) {
 		Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
-	 	Page<PostResponse> posts = postService.getPosts(userId, page);
+	 	Page<PostResponse> posts = postService.getPosts(userId, page, size, category);
 		PageResponse<PostResponse> response = new PageResponse<>(posts);
 		return ResponseEntity.ok(response);
 	}

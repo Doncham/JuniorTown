@@ -1,5 +1,6 @@
 package org.juniortown.backend.post.dto.request;
 
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.user.entity.User;
 
@@ -17,16 +18,20 @@ public class PostCreateRequest {
 	private String title;
 	@NotBlank(message = "컨텐츠를 입력해주세요.")
 	private String content;
+	@NotBlank(message = "카테고리를 입력해주세요.")
+	private String category;
 	@Builder
-	public PostCreateRequest(String title, String content) {
+	public PostCreateRequest(String title, String content, String category) {
 		this.title = title;
 		this.content = content;
+		this.category = category;
 	}
 
 	public Post toEntity(User user) {
 		return Post.builder()
 			.title(title)
 			.content(content)
+			.category(Category.valueOf(category))
 			.user(user)
 			.build();
 	}
