@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 import org.juniortown.backend.entity.BaseTimeEntity;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -61,9 +62,9 @@ public class Post extends BaseTimeEntity {
 		this.deletedAt = LocalDateTime.now(clock);
 	}
 
-	public void update(PostCreateRequest postCreateRequest, Clock clock) {
-		this.title = postCreateRequest.getTitle();
-		this.content = postCreateRequest.getContent();
+	public void update(PostEditRequest postEditRequest) {
+		this.title = postEditRequest.getTitle();
+		this.content = postEditRequest.getContent();
 	}
 
 	public void addReadCount(Long redisReadCount) {

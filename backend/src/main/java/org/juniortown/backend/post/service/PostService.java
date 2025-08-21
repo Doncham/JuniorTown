@@ -14,6 +14,7 @@ import org.juniortown.backend.comment.service.CommentTreeBuilder;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
@@ -78,7 +79,7 @@ public class PostService {
 	}
 
 	@Transactional
-	public PostResponse update(Long postId, Long userId, PostCreateRequest postCreateRequest) {
+	public PostResponse update(Long postId, Long userId, PostEditRequest postEditRequest) {
 		Post post = postRepository.findById(postId)
 			.orElseThrow(() -> new PostNotFoundException());
 
@@ -86,7 +87,7 @@ public class PostService {
 			throw new PostUpdatePermissionDeniedException();
 		}
 
-		post.update(postCreateRequest, clock);
+		post.update(postEditRequest);
 		log.info("게시글 업데이트 성공: {}", post);
 		return PostResponse.from(post);
 	}

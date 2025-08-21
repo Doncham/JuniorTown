@@ -3,6 +3,7 @@ package org.juniortown.backend.post.controller;
 import java.util.stream.Collectors;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.PageResponse;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
@@ -54,9 +55,9 @@ public class PostController {
 	}
 
 	@PatchMapping("/posts/{postId}")
-	public ResponseEntity<PostResponse> update(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId, @Valid @RequestBody PostCreateRequest postCreateRequest) {
+	public ResponseEntity<PostResponse> update(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId, @Valid @RequestBody PostEditRequest postEditRequest) {
 		Long userId = customUserDetails.getUserId();
-		PostResponse response = postService.update(postId, userId, postCreateRequest);
+		PostResponse response = postService.update(postId, userId, postEditRequest);
 		// 202가 뭐임?
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}

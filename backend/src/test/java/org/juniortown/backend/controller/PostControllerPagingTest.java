@@ -14,6 +14,7 @@ import org.juniortown.backend.config.TestClockNotMockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.like.service.LikeService;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.dto.LoginDTO;
@@ -39,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.C;
 import org.testcontainers.utility.DockerImageName;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -129,6 +131,7 @@ public class PostControllerPagingTest {
 				.user(testUser1)
 				.title("테스트 글 " + (i + 1))
 				.content("테스트 내용 " + (i + 1))
+				.category(Category.NOTICE)
 				.build();
 			postRepository.save(post);
 		}
@@ -138,9 +141,14 @@ public class PostControllerPagingTest {
 	void get_posts_first_page_success() throws Exception {
 		// given
 		int page = 0; // 첫 페이지
+		int pageSize = 10;
+		String category = "NOTICE";
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -166,9 +174,14 @@ public class PostControllerPagingTest {
 	void get_posts_second_page_success() throws Exception {
 		// given
 		int page = 1; // 두 번째 페이지
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -186,9 +199,14 @@ public class PostControllerPagingTest {
 	void get_posts_last_page_success() throws Exception {
 		// given
 		int page = 5; // 마지막 페이지 (53개 게시글, 페이지당 10개 -> 마지막 페이지는 6번째)
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -208,6 +226,8 @@ public class PostControllerPagingTest {
 	void get_posts_page_deleted_posts_not_included() throws Exception {
 		// given
 		int page = 5; // 첫 페이지
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 
 		Long postId = postRepository.findAll().get(0).getId();
 
@@ -220,7 +240,10 @@ public class PostControllerPagingTest {
 
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -233,9 +256,12 @@ public class PostControllerPagingTest {
 	void like_post_and_get_posts_first_page_success() throws Exception {
 		// given
 		int page = 0; // 첫 페이지
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 		List<Post> posts = postRepository.findAll(Sort.by("createdAt").descending());
 		Post testPost1 = posts.get(0);
 		Post testPost2 = posts.get(1);
+
 
 		Like like1 = Like.builder()
 			.user(testUser1)
@@ -253,7 +279,10 @@ public class PostControllerPagingTest {
 		likeRepository.saveAll(List.of(like1, like2, like3));
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -275,6 +304,8 @@ public class PostControllerPagingTest {
 	void unlike_post_and_get_posts_first_page_success() throws Exception {
 		// given
 		int page = 0; // 첫 페이지
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 		List<Post> posts = postRepository.findAll(Sort.by("createdAt").descending());
 		Post testPost1 = posts.get(0);
 		Post testPost2 = posts.get(1);
@@ -299,7 +330,10 @@ public class PostControllerPagingTest {
 		likeService.likePost(testUser1.getId(), testPost2.getId());
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page)
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
@@ -321,9 +355,16 @@ public class PostControllerPagingTest {
 	void get_posts_first_page_success_with_non_user() throws Exception {
 		// given
 		int page = 0; // 첫 페이지
+		int pageSize = 10; // 페이지당 게시글 수
+		String category = "NOTICE"; // 카테고리
 
 		// expected
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts/{page}", page))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/posts")
+				.param("page", String.valueOf(page))
+				.param("size", String.valueOf(pageSize))
+				.param("category", category)
+				.header("Authorization", jwt)
+			)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.content", hasSize(10))) // 첫 페이지는 10개
 			.andExpect(jsonPath("$.totalElements").value(POST_COUNT)) // 전체 게시글 수

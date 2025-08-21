@@ -1,24 +1,20 @@
 package org.juniortown.backend.controller;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
-import org.juniortown.backend.post.dto.PostEdit;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.jwt.JWTUtil;
@@ -27,10 +23,8 @@ import org.juniortown.backend.user.request.SignUpDTO;
 import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -40,16 +34,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
-import net.bytebuddy.build.ToStringPlugin;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -113,6 +103,7 @@ class PostControllerTest {
 		PostCreateRequest request = PostCreateRequest.builder()
 			.title("제목입니다.")
 			.content("내용입니다.")
+			.category("NOTICE")
 			.build();
 
 		String json = objectMapper.writeValueAsString(request);
@@ -161,6 +152,7 @@ class PostControllerTest {
 		PostCreateRequest request = PostCreateRequest.builder()
 			.title("제목 입니다.")
 			.content("내용 입니다.")
+			.category("NOTICE")
 			.build();
 		String json = objectMapper.writeValueAsString(request);
 
@@ -192,6 +184,7 @@ class PostControllerTest {
 		PostCreateRequest request = PostCreateRequest.builder()
 			.title("제목 입니다.")
 			.content("내용 입니다.")
+			.category("NOTICE")
 			.build();
 		String json = objectMapper.writeValueAsString(request);
 
@@ -213,6 +206,7 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
@@ -251,6 +245,7 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
@@ -282,17 +277,18 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
 		Long postId = savePost.getId();
 
-		PostEdit postEdit = PostEdit.builder()
+		PostEditRequest postEditRequest = PostEditRequest.builder()
 			.title("수정된 제목")
 			.content("수정된 내용")
 			.build();
 
-		String json = objectMapper.writeValueAsString(postEdit);
+		String json = objectMapper.writeValueAsString(postEditRequest);
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.patch("/api/posts/{postId}", postId)
@@ -301,8 +297,8 @@ class PostControllerTest {
 				.header("Authorization", jwt)
 			)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.title").value(postEdit.getTitle()))
-			.andExpect(jsonPath("$.content").value(postEdit.getContent()))
+			.andExpect(jsonPath("$.title").value(postEditRequest.getTitle()))
+			.andExpect(jsonPath("$.content").value(postEditRequest.getContent()))
 			.andDo(print());
 	}
 
@@ -312,12 +308,12 @@ class PostControllerTest {
 		// given
 		Long postId = 999L; // 존재하지 않는 게시글 ID
 
-		PostEdit postEdit = PostEdit.builder()
+		PostEditRequest postEditRequest = PostEditRequest.builder()
 			.title("수정된 제목")
 			.content("수정된 내용")
 			.build();
 
-		String json = objectMapper.writeValueAsString(postEdit);
+		String json = objectMapper.writeValueAsString(postEditRequest);
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.patch("/api/posts/{postId}", postId)
@@ -339,6 +335,7 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
@@ -352,12 +349,12 @@ class PostControllerTest {
 
 		String jwt = "Bearer " + jwtUtil.createJwt(saveUser2.getId(), saveUser2.getEmail(),"doncham", saveUser2.getRole(), 10000L);
 
-		PostEdit postEdit = PostEdit.builder()
+		PostEditRequest postEditRequest = PostEditRequest.builder()
 			.title("수정된 제목")
 			.content("수정된 내용")
 			.build();
 
-		String json = objectMapper.writeValueAsString(postEdit);
+		String json = objectMapper.writeValueAsString(postEditRequest);
 
 		mockMvc.perform(MockMvcRequestBuilders.patch("/api/posts/{postId}", postId)
 				.contentType(APPLICATION_JSON)
@@ -379,16 +376,17 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
 		Long postId = savePost.getId();
 
-		PostEdit postEdit = PostEdit.builder()
+		PostEditRequest postEditRequest = PostEditRequest.builder()
 			.content("수정된 내용")
 			.build();
 
-		String json = objectMapper.writeValueAsString(postEdit);
+		String json = objectMapper.writeValueAsString(postEditRequest);
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.patch("/api/posts/{postId}", postId)
@@ -412,16 +410,17 @@ class PostControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		Post savePost = postRepository.save(post);
 		Long postId = savePost.getId();
 
-		PostEdit postEdit = PostEdit.builder()
+		PostEditRequest postEditRequest = PostEditRequest.builder()
 			.title("수정된 제목")
 			.build();
 
-		String json = objectMapper.writeValueAsString(postEdit);
+		String json = objectMapper.writeValueAsString(postEditRequest);
 
 		// expected
 		mockMvc.perform(MockMvcRequestBuilders.patch("/api/posts/{postId}", postId)

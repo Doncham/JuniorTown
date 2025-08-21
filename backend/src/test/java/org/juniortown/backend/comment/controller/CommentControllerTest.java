@@ -22,6 +22,7 @@ import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.SyncConfig;
 import org.juniortown.backend.config.TestClockConfig;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.repository.PostRepository;
@@ -113,6 +114,7 @@ class CommentControllerTest {
 				.title("테스트 게시글")
 				.content("테스트 내용입니다.")
 				.user(testUser)
+				.category(Category.NOTICE)
 				.build()
 		);
 		postRepository.save(post);
@@ -222,6 +224,7 @@ class CommentControllerTest {
 			.title("다른 게시글")
 			.content("다른 게시글 내용입니다.")
 			.user(testUser)
+			.category(Category.NOTICE)
 			.build();
 		Post savedDummyPost = postRepository.save(dummyPost);
 

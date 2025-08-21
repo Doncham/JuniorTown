@@ -12,9 +12,11 @@ import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
@@ -72,6 +74,7 @@ class PostServiceTest {
 		PostCreateRequest postCreateRequest = PostCreateRequest.builder()
 			.title("테스트 게시물")
 			.content("테스트 내용입니다.")
+			.category(Category.NOTICE.name())
 			.build();
 		long userId = 1L; // 예시로 사용될 userId
 
@@ -144,7 +147,7 @@ class PostServiceTest {
 		Long postId = 1L;
 		Long userId = 1L;
 
-		PostCreateRequest editRequest = PostCreateRequest.builder()
+		PostEditRequest editRequest = PostEditRequest.builder()
 			.title("Changed Title")
 			.content("Changed Content")
 			.build();
@@ -156,7 +159,7 @@ class PostServiceTest {
 		postService.update(postId, userId, editRequest);
 
 		// then
-		verify(post).update(editRequest, clock);
+		verify(post).update(editRequest);
 	}
 
 	@Test
@@ -166,7 +169,7 @@ class PostServiceTest {
 		Long postId = 1L;
 		Long userId = 1L;
 
-		PostCreateRequest editRequest = PostCreateRequest.builder()
+		PostEditRequest editRequest = PostEditRequest.builder()
 			.title("Changed Title")
 			.content("Changed Content")
 			.build();
@@ -186,7 +189,7 @@ class PostServiceTest {
 		Long postId = 1L;
 		Long userId = 1L;
 
-		PostCreateRequest editRequest = PostCreateRequest.builder()
+		PostEditRequest editRequest = PostEditRequest.builder()
 			.title("Changed Title")
 			.content("Changed Content")
 			.build();
@@ -207,8 +210,10 @@ class PostServiceTest {
 	void getPosts_returnsMappedPage() {
 		// given
 		int page = 0;
+		int pageSize = 10;
 		Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
+		Category category = Category.NOTICE;
 
 		PostWithLikeCountProjection post1 = mock(PostWithLikeCountProjection.class);
 		when(post1.getTitle()).thenReturn("TA");
@@ -220,13 +225,13 @@ class PostServiceTest {
 		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAllWithLikeCountForUser(user.getId(), expectedPageable)).thenReturn(mockPage);
+		when(postRepository.findAllWithLikeCountForUser(user.getId(), expectedPageable, category)).thenReturn(mockPage);
 		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
-		Page<PostResponse> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page, pageSize, category);
 
 		// then
-		verify(postRepository).findAllWithLikeCountForUser(user.getId(), expectedPageable);
+		verify(postRepository).findAllWithLikeCountForUser(user.getId(), expectedPageable, category);
 
 		assertThat(result.getTotalElements()).isEqualTo(2);
 		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
@@ -247,8 +252,11 @@ class PostServiceTest {
 	void getPosts_with_non_user() {
 		// given
 		int page = 0;
+		int pageSize = 10;
 		Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 		PageRequest expectedPageable = PageRequest.of(page, PAGE_SIZE, sort);
+		Category category = Category.NOTICE;
+
 
 		PostWithLikeCountProjection post1 = mock(PostWithLikeCountProjection.class);
 		when(post1.getTitle()).thenReturn("TA");
@@ -259,13 +267,13 @@ class PostServiceTest {
 
 		List<PostWithLikeCountProjection> projections = List.of(post1, post2);
 		PageImpl<PostWithLikeCountProjection> mockPage = new PageImpl<>(projections, expectedPageable, totalElements);
-		when(postRepository.findAllWithLikeCountForNonUser(expectedPageable)).thenReturn(mockPage);
+		when(postRepository.findAllWithLikeCountForNonUser(expectedPageable, category)).thenReturn(mockPage);
 		when(redisTemplate.opsForValue()).thenReturn(readCountValueOperations);
 		// when
-		Page<PostResponse> result = postService.getPosts(null, page);
+		Page<PostResponse> result = postService.getPosts(null, page, pageSize, category);
 
 		// then
-		verify(postRepository).findAllWithLikeCountForNonUser(expectedPageable);
+		verify(postRepository).findAllWithLikeCountForNonUser(expectedPageable, category);
 
 		assertThat(result.getTotalElements()).isEqualTo(2);
 		assertThat(result.getSize()).isEqualTo(PAGE_SIZE);
@@ -286,13 +294,15 @@ class PostServiceTest {
 	void getPosts_emptyPage() {
 		//given
 		int page = 0;
+		int pageSize = 10;
 		PageRequest pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 		Page<PostWithLikeCountProjection> emptyPage = Page.empty(pageable);
+		Category category = Category.NOTICE;
 		when(user.getId()).thenReturn(1L);
-		when(postRepository.findAllWithLikeCountForUser(user.getId(),pageable)).thenReturn(emptyPage);
+		when(postRepository.findAllWithLikeCountForUser(user.getId(),pageable,category)).thenReturn(emptyPage);
 
 		// when
-		Page<PostResponse> result = postService.getPosts(user.getId(), page);
+		Page<PostResponse> result = postService.getPosts(user.getId(), page, pageSize, category);
 
 		// then
 		assertThat(result.getContent()).isEmpty();

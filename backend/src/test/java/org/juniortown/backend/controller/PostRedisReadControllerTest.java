@@ -15,6 +15,7 @@ import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.TestClockConfig;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.post.service.ViewCountSyncService;
@@ -127,6 +128,7 @@ public class PostRedisReadControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		testPost = postRepository.save(post);
