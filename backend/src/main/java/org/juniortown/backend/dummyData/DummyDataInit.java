@@ -36,20 +36,19 @@ public class DummyDataInit implements CommandLineRunner {
 			.orElseThrow(() -> new RuntimeException("User not found"));
 
 		// 게시글 생성
+		Category[] categories = Category.values();
+		for (int i = 0; i < 25; i++) {
+			createPost("title" + i,"content" + i, user, categories[i % categories.length]);
+		}
+	}
+
+	private void createPost(String Dummy_Post_Title, String content, User user, Category category) {
 		Post testPost1 = Post.builder()
-			.title("Dummy Post Title")
-			.content("This is a dummy post content.")
+			.title(Dummy_Post_Title)
+			.content(content)
 			.user(user)
-			.category(Category.NOTICE)
+			.category(category)
 			.build();
 		postRepository.save(testPost1);
-
-		Post testPost2 = Post.builder()
-			.title("Another Dummy Post Title")
-			.content("This is another dummy post content.")
-			.user(user)
-			.category(Category.NOTICE)
-			.build();
-		postRepository.save(testPost2);
 	}
 }

@@ -29,7 +29,11 @@ const PostListPage = () => {
         //   return; // Stop fetching posts if not logged in
         // }
         //서버가 쿼리 파라미터로 page를 받는 걸 권장
-        const response = await axios.get(`/api/posts/${page}`);
+        const response = await axios.get(`/api/posts`, {
+          params: {
+            page: page,
+          },
+        });
 
         setPosts(response.data.content);
         setTotalPages(response.data.totalPages);
