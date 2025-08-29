@@ -1,5 +1,7 @@
 package org.juniortown.backend.post.repository;
 
+import java.util.List;
+
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
@@ -40,4 +42,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
 	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable, Category category);
+
+	Page<Post> findByCategoryAndDeletedAtIsNull(Category category, Pageable pageable);
+
 }

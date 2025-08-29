@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.request.PostEditRequest;
+import org.juniortown.backend.post.dto.response.HomePageResponse;
 import org.juniortown.backend.post.dto.response.PageResponse;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCount;
@@ -83,6 +84,14 @@ public class PostController {
 		String viewerId = customUserDetails != null ? String.valueOf(customUserDetails.getUserId()) : guestId;
 		PostDetailResponse postDetailResponse = postService.getPost(postId, viewerId);
 		return ResponseEntity.ok(postDetailResponse);
+	}
+
+	@GetMapping("/main")
+	public ResponseEntity<HomePageResponse> homePagePosts(
+		@RequestParam(defaultValue = "5") int size
+	){
+		HomePageResponse homePageResponse = postService.homePagePosts(size);
+		return ResponseEntity.ok(homePageResponse);
 	}
 
 }
