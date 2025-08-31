@@ -86,7 +86,7 @@ public class PostController {
 		return ResponseEntity.ok(postDetailResponse);
 	}
 
-	@GetMapping("/main")
+	@GetMapping("/posts/home")
 	public ResponseEntity<HomePageResponse> homePagePosts(
 		@RequestParam(defaultValue = "5") int size
 	){

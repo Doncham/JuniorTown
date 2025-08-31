@@ -1,6 +1,8 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,10 @@ import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.request.PostEditRequest;
+import org.juniortown.backend.post.dto.response.HomePageResponse;
+import org.juniortown.backend.post.dto.response.HomeSection;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
+import org.juniortown.backend.post.dto.response.PostForHome;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Category;
@@ -23,6 +28,7 @@ import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
+import org.juniortown.backend.post.dto.response.IdCount;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
@@ -186,5 +192,67 @@ public class PostService {
 		} catch (NumberFormatException e) {
 			return false;
 		}
+	}
+
+	@Transactional(readOnly = true)
+	public HomePageResponse homePagePosts(int categorySize) {
+		List<Category> categories = List.of(Category.values());
+		Map<Category, List<Post>> byCategory = new HashMap<>();
+		// postId를 담기 위한 리스트
+		List<Post> collected = new ArrayList<>();
+
+		PageRequest categoryPageRequest = PageRequest.of(0, categorySize,
+			Sort.by(Sort.Order.desc("createdAt"),
+				Sort.Order.desc("id")));
+
+		// 5개의 카테고리별로 최신 게시글 5개씩 조회
+		for (Category category : categories) {
+			List<Post> posts = postRepository.findByCategoryAndDeletedAtIsNull(category, categoryPageRequest)
+				.getContent();
+			byCategory.put(category, posts);
+			collected.addAll(posts);
+		}
+
+		// 조회된 게시글들의 좋아요 수, 댓글 수 일괄 조회
+		List<Long> postIds = collected.stream().map(Post::getId).toList();
+		// 게시글이 하나도 없는 경우에 대한 방어 코드
+		if (postIds.isEmpty()) {
+			return HomePageResponse.builder()
+				.sections(List.of())
+				.createdAt(LocalDateTime.now())
+				.build();
+		}
+
+		Map<Long,Long> commentMap = commentRepository.countByPostIds(postIds)
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCnt));
+		Map<Long, Long> likeMap = likeRepository.countByPostIds(postIds)
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCnt));
+
+	List<HomeSection> sections = categories.stream()
+		.map(cat -> {
+			List<PostForHome> items = byCategory.getOrDefault(cat, List.of())
+				.stream()
+				.map(p -> PostForHome.builder()
+					.postId(p.getId())
+					.title(p.getTitle())
+					.userId(p.getUser().getId())
+					.nickname(p.getUser().getName())
+					.likeCount(likeMap.getOrDefault(p.getId(), 0L))
+					.commentCount(commentMap.getOrDefault(p.getId(), 0L))
+					.readCount(p.getReadCount())
+					.createdAt(p.getCreatedAt())
+					.build())
+				.toList();
+			return HomeSection.builder()
+				.category(cat.name().toLowerCase())
+				.items(items)
+				.build();
+		})
+		.toList();
+
+	return HomePageResponse.builder()
+		.sections(sections)
+		.createdAt(LocalDateTime.now())
+		.build();
 	}
 }
