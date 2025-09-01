@@ -1,4 +1,4 @@
-package org.juniortown.backend.controller;
+package org.juniortown.backend.post.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;

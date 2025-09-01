@@ -1,4 +1,4 @@
-package org.juniortown.backend.controller;
+package org.juniortown.backend.post.controller;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.http.MediaType.*;

@@ -1,6 +1,5 @@
 package org.juniortown.backend.comment.service;
 
-import static org.juniortown.backend.util.TestDataUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
@@ -10,6 +9,7 @@ import org.juniortown.backend.comment.dto.response.CommentsInPost;
 import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.user.entity.User;
+import org.juniortown.backend.util.TestBuilders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,13 +28,13 @@ class CommentTreeBuilderTest {
 
 	@BeforeEach
 	void setUp() {
-		userA = createUser(1L, "testA", "testA@gmail.com");
-		userB = createUser(2L, "testB", "testB@gmail.com");
-		post = createPost(1L, "테스트 게시글", "테스트 게시글 내용", userA);
-		parentComment1 = createComment(1L, post, userA, "부모 댓글1", null);
-		parentComment2 = createComment(2L, post, userB, "부모 댓글2", null);
-		childComment1 = createComment(3L, post, userA, "자식 댓글1", parentComment1);
-		childComment2 = createComment(4L, post, userB, "자식 댓글2", parentComment2);
+		userA = TestBuilders.user().id(1L).name("testA").email("testA@email.com").build();
+		userB = TestBuilders.user().id(2L).name("testB").email("testB@email.com").build();
+		post = TestBuilders.post().id(1L).title("테스트 게시글").content("테스트 게시글 내용").user(userA).build();
+		parentComment1 = TestBuilders.comment().id(1L).post(post).user(userA).content("부모 댓글1").parent(null).build();
+		parentComment2 = TestBuilders.comment().id(2L).post(post).user(userB).content("부모 댓글2").parent(null).build();
+		childComment1 = TestBuilders.comment().id(3L).post(post).user(userA).content("자식 댓글1").parent(parentComment1).build();
+		childComment2 = TestBuilders.comment().id(4L).post(post).user(userB).content("자식 댓글2").parent(parentComment2).build();
 	}
 	@Test
 	@DisplayName("빈 리스트 주입 시 빈 리스트 반환")

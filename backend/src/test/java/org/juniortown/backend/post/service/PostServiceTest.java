@@ -1,7 +1,6 @@
 package org.juniortown.backend.post.service;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.juniortown.backend.util.TestDataUtil.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
@@ -24,6 +23,7 @@ import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
 import org.juniortown.backend.user.repository.UserRepository;
+import org.juniortown.backend.util.TestBuilders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -323,12 +323,18 @@ class PostServiceTest {
 		String title = "testTitle";
 		String content = "testContent";
 		String name = "testName";
-		user = createUser(userId, name,  "test@email.com");
-		post = createPost(postId, title, content, user);
-		Comment parentComment1 = createComment(1L, post, user, "부모 댓글1", null);
-		Comment parentComment2 = createComment(2L, post, user, "부모 댓글2", null);
-		Comment childComment1 = createComment(3L, post, user, "자식 댓글1", parentComment1);
-		Comment childComment2 = createComment(4L, post, user, "자식 댓글2", parentComment2);
+		user = TestBuilders.user().id(userId).name(name).email("test@email.com").build();
+		post = TestBuilders.post().id(postId).title(title).content(content).user(user).build();
+		Comment parentComment1 = TestBuilders.comment().id(1L).post(post).user(user).content("부모 댓글1").parent(null).build();
+		Comment parentComment2 = TestBuilders.comment().id(2L).post(post).user(user).content("부모 댓글2").parent(null).build();
+		Comment childComment1 = TestBuilders.comment().id(3L).post(post).user(user).content("자식 댓글1").parent(parentComment1).build();
+		Comment childComment2 = TestBuilders.comment()
+			.id(4L)
+			.post(post)
+			.user(user)
+			.content("자식 댓글2")
+			.parent(parentComment2)
+			.build();
 
 
 		// when
