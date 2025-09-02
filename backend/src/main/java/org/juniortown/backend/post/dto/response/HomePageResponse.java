@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class HomePageResponse {
-	List<HomeSection> sections;
+	List<HomePageSection> sections;
 	private LocalDateTime createdAt;
 	@Builder
-	public HomePageResponse(List<HomeSection> sections, LocalDateTime createdAt) {
+	public HomePageResponse(List<HomePageSection> sections, LocalDateTime createdAt) {
 		this.sections = sections;
 		this.createdAt = createdAt;
 	}

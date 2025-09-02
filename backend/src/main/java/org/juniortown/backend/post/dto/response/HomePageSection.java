@@ -2,18 +2,17 @@ package org.juniortown.backend.post.dto.response;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class HomeSection {
+public class HomePageSection {
 	private String category;
-	private List<PostForHome> items;
+	private List<PostForHomePage> items;
 	@Builder
-	public HomeSection(String category, List<PostForHome> items) {
+	public HomePageSection(String category, List<PostForHomePage> items) {
 		this.category = category;
 		this.items = items;
 	}

@@ -19,7 +19,6 @@ public class TestBuilders {
 		public UserBuilder name(String name) { this.name = name; return this; }
 		public UserBuilder email(String email) { this.email = email; return this; }
 
-
 		public User build() {
 			User u = User.builder()
 				.name(name)

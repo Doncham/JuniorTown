@@ -18,9 +18,9 @@ import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.HomePageResponse;
-import org.juniortown.backend.post.dto.response.HomeSection;
+import org.juniortown.backend.post.dto.response.HomePageSection;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
-import org.juniortown.backend.post.dto.response.PostForHome;
+import org.juniortown.backend.post.dto.response.PostForHomePage;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Category;
@@ -195,13 +195,13 @@ public class PostService {
 	}
 
 	@Transactional(readOnly = true)
-	public HomePageResponse homePagePosts(int categorySize) {
+	public HomePageResponse homePagePosts(int perCategory) {
 		List<Category> categories = List.of(Category.values());
 		Map<Category, List<Post>> byCategory = new HashMap<>();
 		// postId를 담기 위한 리스트
 		List<Post> collected = new ArrayList<>();
 
-		PageRequest categoryPageRequest = PageRequest.of(0, categorySize,
+		PageRequest categoryPageRequest = PageRequest.of(0, perCategory,
 			Sort.by(Sort.Order.desc("createdAt"),
 				Sort.Order.desc("id")));
 
@@ -228,31 +228,31 @@ public class PostService {
 		Map<Long, Long> likeMap = likeRepository.countByPostIds(postIds)
 			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCnt));
 
-	List<HomeSection> sections = categories.stream()
-		.map(cat -> {
-			List<PostForHome> items = byCategory.getOrDefault(cat, List.of())
-				.stream()
-				.map(p -> PostForHome.builder()
-					.postId(p.getId())
-					.title(p.getTitle())
-					.userId(p.getUser().getId())
-					.nickname(p.getUser().getName())
-					.likeCount(likeMap.getOrDefault(p.getId(), 0L))
-					.commentCount(commentMap.getOrDefault(p.getId(), 0L))
-					.readCount(p.getReadCount())
-					.createdAt(p.getCreatedAt())
-					.build())
-				.toList();
-			return HomeSection.builder()
-				.category(cat.name().toLowerCase())
-				.items(items)
-				.build();
-		})
-		.toList();
+		List<HomePageSection> sections = categories.stream()
+			.map(cat -> {
+				List<PostForHomePage> items = byCategory.getOrDefault(cat, List.of())
+					.stream()
+					.map(p -> PostForHomePage.builder()
+						.postId(p.getId())
+						.title(p.getTitle())
+						.userId(p.getUser().getId())
+						.nickname(p.getUser().getName())
+						.likeCount(likeMap.getOrDefault(p.getId(), 0L))
+						.commentCount(commentMap.getOrDefault(p.getId(), 0L))
+						.readCount(p.getReadCount())
+						.createdAt(p.getCreatedAt())
+						.build())
+					.toList();
+				return HomePageSection.builder()
+					.category(cat.name().toLowerCase())
+					.items(items)
+					.build();
+			})
+			.toList();
 
-	return HomePageResponse.builder()
-		.sections(sections)
-		.createdAt(LocalDateTime.now())
-		.build();
+		return HomePageResponse.builder()
+			.sections(sections)
+			.createdAt(LocalDateTime.now())
+			.build();
 	}
 }

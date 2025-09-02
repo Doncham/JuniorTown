@@ -3,22 +3,21 @@ package org.juniortown.backend.post.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.response.HomePageResponse;
-import org.juniortown.backend.post.dto.response.HomeSection;
+import org.juniortown.backend.post.dto.response.HomePageSection;
 import org.juniortown.backend.post.dto.response.IdCount;
-import org.juniortown.backend.post.dto.response.PostForHome;
+import org.juniortown.backend.post.dto.response.PostForHomePage;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
-import org.juniortown.backend.user.repository.UserRepository;
 
+import org.juniortown.backend.util.TestBuilders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -131,12 +130,16 @@ public class MainPageServiceTest {
 		Category C2 = cats[1];
 
 		List<Post> c1Posts = List.of(
-			post(101, 1, "user1", "Q1", C1, 5, now.minusMinutes(1)),
-			post(102, 2, "user2", "Q2", C1, 6, now.minusMinutes(2))
+			TestBuilders.post().id(101L).user(TestBuilders.user().id(1L).name("user1").build())
+				.title("Q1").category(C1).readCount(5).createdAt(now.minusMinutes(1)).build(),
+			TestBuilders.post().id(102L).user(TestBuilders.user().id(2L).name("user2").build())
+				.title("Q2").category(C1).readCount(5).createdAt(now.minusMinutes(2)).build()
 		);
 		List<Post> c2Posts = List.of(
-			post(201, 3, "user3", "S1", C2, 10, now.minusMinutes(3)),
-			post(202, 4, "user4", "S2", C2, 11, now.minusMinutes(4))
+			TestBuilders.post().id(201L).user(TestBuilders.user().id(3L).name("user3").build())
+				.title("S1").category(C2).readCount(10).createdAt(now.minusMinutes(3)).build(),
+			TestBuilders.post().id(202L).user(TestBuilders.user().id(4L).name("user4").build())
+				.title("S2").category(C2).readCount(11).createdAt(now.minusMinutes(4)).build()
 		);
 		// 1) 기본 스텁: 모든 카테고리는 빈 페이지 반환
 		when(postRepository.findByCategoryAndDeletedAtIsNull(any(Category.class), any(Pageable.class)))
@@ -163,16 +166,16 @@ public class MainPageServiceTest {
 		assertTrue(resp.getSections().size() >= 2);
 
 		// 왜 cat[0]에 있는 값이랑 반환값의 첫번째 첫번째 category가 같은건지 이해하기
-		HomeSection s0 = resp.getSections().get(0);
+		HomePageSection s0 = resp.getSections().get(0);
 		assertEquals(cats[0].name().toLowerCase(), s0.getCategory());
 		assertEquals(2, s0.getItems().size());
-		PostForHome p0 = s0.getItems().get(0);
+		PostForHomePage p0 = s0.getItems().get(0);
 		assertEquals(101L, p0.getPostId());
 		assertEquals(2L, p0.getLikeCount());
 		assertEquals(7L, p0.getCommentCount());   // hit
 		assertEquals(5L, p0.getReadCount());
 
-		PostForHome p1 = s0.getItems().get(1);
+		PostForHomePage p1 = s0.getItems().get(1);
 		assertEquals(102L, p1.getPostId());
 		assertEquals(4L, p1.getLikeCount());
 		assertEquals(0L, p1.getCommentCount());   // 누락 → 0 폴백

@@ -88,9 +88,9 @@ public class PostController {
 
 	@GetMapping("/posts/home")
 	public ResponseEntity<HomePageResponse> homePagePosts(
-		@RequestParam(defaultValue = "5") int size
+		@RequestParam(defaultValue = "5") int perCategory
 	){
-		HomePageResponse homePageResponse = postService.homePagePosts(size);
+		HomePageResponse homePageResponse = postService.homePagePosts(perCategory);
 		return ResponseEntity.ok(homePageResponse);
 	}
 

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class PostForHome {
+public class PostForHomePage {
 	private Long postId;
 	private String title;
 	private Long userId;
@@ -18,7 +18,7 @@ public class PostForHome {
 	private Long readCount;
 	private LocalDateTime createdAt;
 	@Builder
-	public PostForHome(Long postId, String title, Long userId, String nickname, Long likeCount, Long commentCount,
+	public PostForHomePage(Long postId, String title, Long userId, String nickname, Long likeCount, Long commentCount,
 			Long readCount, LocalDateTime createdAt) {
 		this.postId = postId;
 		this.title = title;
