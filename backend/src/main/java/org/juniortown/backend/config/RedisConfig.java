@@ -36,8 +36,10 @@ public class RedisConfig {
 	public RedisTemplate<String, Long> readCountRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 		RedisTemplate<String,Long> redisTemplate = new RedisTemplate<>();
 		redisTemplate.setConnectionFactory(redisConnectionFactory);
-		redisTemplate.setKeySerializer(new StringRedisSerializer());
-		redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Long.class));
+		// redisTemplate.setKeySerializer(new StringRedisSerializer());
+		// redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Long.class));
+		redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+		redisTemplate.setHashValueSerializer(new Jackson2JsonRedisSerializer<>(Long.class));
 		return redisTemplate;
 	}
 }

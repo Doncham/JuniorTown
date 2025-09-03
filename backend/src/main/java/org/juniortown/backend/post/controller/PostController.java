@@ -1,18 +1,14 @@
 package org.juniortown.backend.post.controller;
 
-import java.util.stream.Collectors;
-
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.HomePageResponse;
 import org.juniortown.backend.post.dto.response.PageResponse;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
-import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
-import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.service.PostService;
-import org.juniortown.backend.post.service.ViewCountService;
+import org.juniortown.backend.post.service.ReadCountRedisService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -37,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class PostController {
 	private final PostService postService;
-	private final ViewCountService viewCountService;
+	private final ReadCountRedisService readCountRedisService;
 	@PostMapping("/posts")
 	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@Valid @RequestBody PostCreateRequest postCreateRequest) {

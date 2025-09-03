@@ -18,6 +18,7 @@ import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
+import org.juniortown.backend.post.service.ReadCountRedisService;
 import org.juniortown.backend.post.service.ViewCountSyncService;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
@@ -331,7 +332,7 @@ public class PostRedisReadControllerTest {
 		// given
 		Long postId = testPost.getId();
 
-		String key = "post:viewCount:" + postId;
+		String key = ReadCountRedisService.VIEW_COUNT_KEY + postId;
 		readCountRedisTemplate.opsForValue().set(key, 10L);
 
 		// when

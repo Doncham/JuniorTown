@@ -1,6 +1,11 @@
 package org.juniortown.backend.post.service;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -14,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class ViewCountService {
+public class ReadCountRedisService {
 	@Qualifier("keyCheckRedisTemplate")
 	private final RedisTemplate<String, Boolean> keyCheckRedisTemplate;
 	@Qualifier("readCountRedisTemplate")
@@ -38,7 +43,8 @@ public class ViewCountService {
 				// 중복키 생성
 				keyCheckRedisTemplate.opsForValue().set(dupKey, true, 10, TimeUnit.MINUTES);
 				// 조회수 캐시++1
-				readCountRedisTemplate.opsForValue().increment(readCountKey);
+				//readCountRedisTemplate.opsForValue().increment(readCountKey);
+				readCountRedisTemplate.opsForHash().increment(VIEW_COUNT_KEY, postId,1);
 				return getReadCount(postId);
 			}
 		} catch (Exception e) {
@@ -50,8 +56,30 @@ public class ViewCountService {
 
 	public Long getReadCount(String postId) {
 		String readCountKey = buildReadCountKey(postId);
-		Long readCount = readCountRedisTemplate.opsForValue().get(readCountKey);
+		//Long readCount = readCountRedisTemplate.opsForValue().get(readCountKey);
+		// 응? 뭘 반환해주는거지? String인가?
+		Long readCount = (Long)readCountRedisTemplate.opsForHash().get(VIEW_COUNT_KEY, postId);
 		return readCount != null ? readCount : 0L;
+	}
+
+	public Map<String, Long> getReadDeltaFromRedis(List<String> postIds) {
+		if(postIds == null || postIds.isEmpty()) return Map.of();
+
+		List<String> postIdKeys = postIds.stream()
+			.map(i -> VIEW_COUNT_KEY + i)
+			.collect(Collectors.toList());
+
+		// multiGet으로 캐시된 조회수 가져오기
+		List<Long> readCounts = readCountRedisTemplate.opsForValue().multiGet(postIdKeys);
+		// Collections.singleton은 왜 쓰는거지????
+		List<Object> raw = readCountRedisTemplate.opsForHash()
+			.multiGet("view:delta", Collections.singleton(postIdKeys));
+
+		HashMap<String, Long> map = new HashMap<>();
+		for (int i = 0; i < postIds.size(); i++) {
+			map.put(postIds.get(i), readCounts.get(i));
+		}
+		return map;
 	}
 
 	private String buildDupPreventKey(String postId, String userId) {

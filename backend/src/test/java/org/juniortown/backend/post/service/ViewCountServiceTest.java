@@ -16,7 +16,7 @@ import org.springframework.data.redis.core.ValueOperations;
 
 @ExtendWith(MockitoExtension.class)
 class ViewCountServiceTest {
-	private ViewCountService viewCountService;
+	private ReadCountRedisService readCountRedisService;
 	@Mock
 	private RedisTemplate<String, Boolean> keyCheckRedisTemplate;
 	@Mock
@@ -28,7 +28,7 @@ class ViewCountServiceTest {
 
 	@BeforeEach
 	public void setUp() {
-		viewCountService = new ViewCountService(keyCheckRedisTemplate, readCountRedisTemplate);
+		readCountRedisService = new ReadCountRedisService(keyCheckRedisTemplate, readCountRedisTemplate);
 	}
 
 	@Test
@@ -45,7 +45,7 @@ class ViewCountServiceTest {
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(null);
 		when(readCountValueOperations.get(readCountKey)).thenReturn(1L);
 		// when
-		Long result = viewCountService.readCountUp(userId, postId);
+		Long result = readCountRedisService.readCountUp(userId, postId);
 
 		// then
 		Assertions.assertEquals(1L, result);
@@ -67,7 +67,7 @@ class ViewCountServiceTest {
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(true);
 		when(readCountValueOperations.get(readCountKey)).thenReturn(0L);
 		// when
-		Long result = viewCountService.readCountUp(userId, postId);
+		Long result = readCountRedisService.readCountUp(userId, postId);
 
 		// then
 		Assertions.assertEquals(0L, result);

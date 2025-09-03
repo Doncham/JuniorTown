@@ -53,7 +53,7 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final LikeRepository likeRepository;
-	private final ViewCountService viewCountService;
+	private final ReadCountRedisService readCountRedisService;
 	private final CommentRepository commentRepository;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
@@ -132,7 +132,7 @@ public class PostService {
 		if(ids.isEmpty()) return Map.of();
 
 		List<String> keys = ids.stream()
-			.map(id -> ViewCountService.VIEW_COUNT_KEY + id)
+			.map(id -> ReadCountRedisService.VIEW_COUNT_KEY + id)
 			.toList();
 		try {
 			List<Long> readCounts = redisTemplate.opsForValue().multiGet(keys);
@@ -163,7 +163,7 @@ public class PostService {
 			like = likeRepository.findByUserIdAndPostId(Long.valueOf(viewerId), post.getId());
 		}
 		Long likeCount = likeRepository.countByPostId(postId);
-		Long redisReadCount = viewCountService.readCountUp(viewerId, postId.toString());
+		Long redisReadCount = readCountRedisService.readCountUp(viewerId, postId.toString());
 
 		// 댓글 조회 로직
 		List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);

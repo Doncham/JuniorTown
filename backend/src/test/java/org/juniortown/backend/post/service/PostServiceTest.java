@@ -52,7 +52,7 @@ class PostServiceTest {
 	@Mock
 	private LikeRepository likeRepository;
 	@Mock
-	private ViewCountService viewCountService;
+	private ReadCountRedisService readCountRedisService;
 	@Mock
 	private CommentRepository commentRepository;
 	@Mock
