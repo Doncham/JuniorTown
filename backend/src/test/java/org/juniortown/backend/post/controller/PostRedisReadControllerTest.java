@@ -333,7 +333,7 @@ public class PostRedisReadControllerTest {
 		Long postId = testPost.getId();
 
 		String key = ReadCountRedisService.VIEW_COUNT_KEY + postId;
-		readCountRedisTemplate.opsForValue().set(key, 10L);
+		readCountRedisTemplate.opsForHash().put(ReadCountRedisService.VIEW_COUNT_KEY, postId.toString(), 10L);
 
 		// when
 		viewCountSyncService.syncViewCounts();
