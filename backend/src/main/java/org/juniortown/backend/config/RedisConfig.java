@@ -35,6 +35,7 @@ public class RedisConfig {
 	@Bean
 	public RedisTemplate<String, Long> readCountRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 		RedisTemplate<String,Long> redisTemplate = new RedisTemplate<>();
+		redisTemplate.setKeySerializer(new StringRedisSerializer());
 		redisTemplate.setHashKeySerializer(new StringRedisSerializer());
 		redisTemplate.setHashValueSerializer(new Jackson2JsonRedisSerializer<>(Long.class));
 		redisTemplate.setConnectionFactory(redisConnectionFactory);

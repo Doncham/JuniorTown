@@ -16,31 +16,35 @@ import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
+import org.juniortown.backend.post.service.ReadCountRedisService;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.repository.UserRepository;
-import org.juniortown.backend.user.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.testcontainers.RedisContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // 클래스 단위로 테스트 인스턴스를 생성한다.
 @ActiveProfiles("test")
-@Import({RedisTestConfig.class, SyncConfig.class, TestClockConfig.class})
+@Import({RedisTestConfig.class, TestClockConfig.class})
+@Testcontainers
 @Transactional
 public class PostMainPageControllerTest {
 	@Autowired
@@ -53,8 +57,23 @@ public class PostMainPageControllerTest {
 	CommentRepository commentRepository;
 	@Autowired
 	LikeRepository likeRepository;
+	@Autowired
+	ReadCountRedisService readCountRedisService;
+
 	private User u1, u2, u3, u4;
 	private Post q1, q2, s1, s2;
+
+	@Container
+	static GenericContainer<?> redis = new RedisContainer(DockerImageName.parse("redis:8.0"))
+		.withCommand("redis-server --port 6382")
+		.withExposedPorts(6382);
+
+
+	@DynamicPropertySource
+	static void overrideProps(DynamicPropertyRegistry registry) {
+		registry.add("spring.data.redis.host", redis::getHost);
+		registry.add("spring.data.redis.port", () -> redis.getFirstMappedPort());
+	}
 
 	@BeforeEach
 	void setUp() {

@@ -215,6 +215,7 @@ public class PostService {
 
 		// 조회된 게시글들의 좋아요 수, 댓글 수 일괄 조회
 		List<Long> postIds = collected.stream().map(Post::getId).toList();
+		Map<String, Long> readDeltaFromRedisMap = readCountRedisService.getReadDeltaFromRedis(postIds);
 		// 게시글이 하나도 없는 경우에 대한 방어 코드
 		if (postIds.isEmpty()) {
 			return HomePageResponse.builder()
@@ -239,7 +240,7 @@ public class PostService {
 						.nickname(p.getUser().getName())
 						.likeCount(likeMap.getOrDefault(p.getId(), 0L))
 						.commentCount(commentMap.getOrDefault(p.getId(), 0L))
-						.readCount(p.getReadCount())
+						.readCount(p.getReadCount() + readDeltaFromRedisMap.getOrDefault(String.valueOf(p.getId()), 0L))
 						.createdAt(p.getCreatedAt())
 						.build())
 					.toList();

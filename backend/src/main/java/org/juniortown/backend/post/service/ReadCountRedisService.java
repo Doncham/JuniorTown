@@ -1,5 +1,6 @@
 package org.juniortown.backend.post.service;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +33,6 @@ public class ReadCountRedisService {
 
 	public Long readCountUp(String userId, String postId) {
 		String dupKey = buildDupPreventKey(postId, userId);
-		String readCountKey = buildReadCountKey(postId);
 		try {
 			// dupKey 조회
 			Boolean exist = keyCheckRedisTemplate.opsForValue().get(dupKey);
@@ -55,38 +56,33 @@ public class ReadCountRedisService {
 	}
 
 	public Long getReadCount(String postId) {
-		String readCountKey = buildReadCountKey(postId);
 		//Long readCount = readCountRedisTemplate.opsForValue().get(readCountKey);
-		// 응? 뭘 반환해주는거지? String인가?
 		Long readCount = (Long)readCountRedisTemplate.opsForHash().get(VIEW_COUNT_KEY, postId);
 		return readCount != null ? readCount : 0L;
 	}
 
-	public Map<String, Long> getReadDeltaFromRedis(List<String> postIds) {
+	public Map<String, Long> getReadDeltaFromRedis(List<Long> postIds) {
 		if(postIds == null || postIds.isEmpty()) return Map.of();
 
-		List<String> postIdKeys = postIds.stream()
-			.map(i -> VIEW_COUNT_KEY + i)
+		Collection<Object> postIdKeys = postIds.stream()
+			.map(String::valueOf)
 			.collect(Collectors.toList());
 
 		// multiGet으로 캐시된 조회수 가져오기
-		List<Long> readCounts = readCountRedisTemplate.opsForValue().multiGet(postIdKeys);
-		// Collections.singleton은 왜 쓰는거지????
-		List<Object> raw = readCountRedisTemplate.opsForHash()
-			.multiGet("view:delta", Collections.singleton(postIdKeys));
+		List<Object> deltas = readCountRedisTemplate.opsForHash()
+			.multiGet(VIEW_COUNT_KEY, postIdKeys);
 
 		HashMap<String, Long> map = new HashMap<>();
 		for (int i = 0; i < postIds.size(); i++) {
-			map.put(postIds.get(i), readCounts.get(i));
+			// 여기서도 바로 (Long)으로 캐스팅 하면 위험한가?
+			Object readCountCache = deltas.get(i);
+			if(readCountCache == null) readCountCache = 0L;
+			map.put(String.valueOf(postIds.get(i)), (Long)readCountCache);
 		}
 		return map;
 	}
 
 	private String buildDupPreventKey(String postId, String userId) {
 		return DUP_PREVENT_KEY + postId + ":" + userId;
-	}
-
-	private String buildReadCountKey(String postId) {
-		return VIEW_COUNT_KEY + postId;
 	}
 }

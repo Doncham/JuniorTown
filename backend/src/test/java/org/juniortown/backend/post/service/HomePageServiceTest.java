@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.like.repository.LikeRepository;
@@ -15,7 +16,6 @@ import org.juniortown.backend.post.dto.response.PostForHomePage;
 import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
-import org.juniortown.backend.user.entity.User;
 
 import org.juniortown.backend.util.TestBuilders;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils;
 
 // {
 // 	"sections": [
@@ -79,7 +78,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 // 	}
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-public class MainPageServiceTest {
+public class HomePageServiceTest {
 	@InjectMocks
 	private PostService postService;
 	@Mock
@@ -88,6 +87,8 @@ public class MainPageServiceTest {
 	private LikeRepository likeRepository;
 	@Mock
 	private CommentRepository commentRepository;
+	@Mock
+	private ReadCountRedisService readCountRedisService;
 
 
 	private IdCount idCount(long postId, long cnt) {
@@ -99,24 +100,6 @@ public class MainPageServiceTest {
 		};
 	}
 
-	private Post post(long id, long userId, String username, String title,
-		Category category, long readCount, LocalDateTime createdAt) {
-		User user = User.builder()
-			.name(username)
-			.id(userId)
-			.build();
-
-		Post post = Post.builder()
-			.title(title)
-			.user(user)
-			.category(category)
-			.build();
-		ReflectionTestUtils.setField(post, "id", id);
-		ReflectionTestUtils.setField(post, "readCount", readCount);
-		ReflectionTestUtils.setField(post, "createdAt", createdAt);
-		return post;
-	}
-
 	@Test
 	@DisplayName("메인 페이지 조회 성공")
 	void get_main_page_success() {
@@ -125,7 +108,6 @@ public class MainPageServiceTest {
 		LocalDateTime now = LocalDateTime.now();
 
 		Category[] cats = Category.values();
-		// Enum 순서에 의존한 부분 리팩토링 필요
 		Category C1 = cats[0];
 		Category C2 = cats[1];
 
@@ -152,6 +134,10 @@ public class MainPageServiceTest {
 			.thenReturn(new PageImpl<>(c2Posts));
 
 		List<Long> allIds = List.of(101L, 102L, 201L, 202L);
+		when(readCountRedisService.getReadDeltaFromRedis(allIds)).thenReturn(Map.of(
+			"101", 1L,
+			"102", 2L
+		));
 		when(commentRepository.countByPostIds(allIds))
 			.thenReturn(List.of(idCount(101, 7), idCount(201, 3)));
 		when(likeRepository.countByPostIds(allIds))
@@ -165,7 +151,7 @@ public class MainPageServiceTest {
 		assertNotNull(resp.getSections());
 		assertTrue(resp.getSections().size() >= 2);
 
-		// 왜 cat[0]에 있는 값이랑 반환값의 첫번째 첫번째 category가 같은건지 이해하기
+		// 왜 cat[0]에 있는 값이랑 반환값의 첫번째 category가 같은건지 이해하기
 		HomePageSection s0 = resp.getSections().get(0);
 		assertEquals(cats[0].name().toLowerCase(), s0.getCategory());
 		assertEquals(2, s0.getItems().size());
@@ -173,12 +159,13 @@ public class MainPageServiceTest {
 		assertEquals(101L, p0.getPostId());
 		assertEquals(2L, p0.getLikeCount());
 		assertEquals(7L, p0.getCommentCount());   // hit
-		assertEquals(5L, p0.getReadCount());
+		assertEquals(6L, p0.getReadCount());
 
 		PostForHomePage p1 = s0.getItems().get(1);
 		assertEquals(102L, p1.getPostId());
 		assertEquals(4L, p1.getLikeCount());
 		assertEquals(0L, p1.getCommentCount());   // 누락 → 0 폴백
+		assertEquals(7L, p1.getReadCount());
 
 		// Pageable 전달 검증
 		ArgumentCaptor<PageRequest> pr = ArgumentCaptor.forClass(PageRequest.class);
