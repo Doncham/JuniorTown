@@ -21,7 +21,7 @@ const App = () => {
           <Route path="/posts/add" element={<PostCreatePage />} />
           <Route path="/posts/edit/:id" element={<PostEditPage />} />
           <Route path="/posts/:id" element={<PostDetailsPage />} />
-          <Route path="/posts" element={<PostListPage />} />
+          <Route path="/posts/category/:category" element={<PostListPage />} />
           <Route path="*" element={<Error />} />
         </Routes>
       </Layout>

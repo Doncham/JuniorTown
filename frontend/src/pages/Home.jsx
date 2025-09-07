@@ -13,11 +13,11 @@ import {
 
 // 카테고리 메타: 라벨/경로/아이콘
 const CATEGORY_META = {
-  QUESTION: { label: '질문', path: '/posts?category=QUESTION', icon: '❓' },
-  STUDY: { label: '스터디', path: '/posts?category=STUDY', icon: '📚' },
-  NOTICE: { label: '공지', path: '/posts?category=NOTICE', icon: '📢' },
-  SECOND_HAND_MARKET: { label: '중고장터', path: '/posts?category=SECOND_HAND_MARKET', icon: '💱' },
-  MENTOR: { label: '멘토', path: '/posts?category=MENTOR', icon: '🧭' },
+  QUESTION: { label: '질문', path: '/posts/category/QUESTION', icon: '❓' },
+  STUDY: { label: '스터디', path: '/posts/category/STUDY', icon: '📚' },
+  NOTICE: { label: '공지', path: '/posts/category/NOTICE', icon: '📢' },
+  SECOND_HAND_MARKET: { label: '중고장터', path: '/posts/category/SECOND_HAND_MARKET', icon: '💱' },
+  MENTOR: { label: '멘토', path: '/posts/category/MENTOR', icon: '🧭' },
 };
 
 // 서버 카테고리 문자열 → 내부 Enum 키로 정규화
@@ -149,6 +149,7 @@ function CategorySection({ category, items, loading }) {
           ))}
         </ListGroup>
       ) : (items?.length ?? 0) === 0 ? (
+        // to를 수정해야 함. 글 작성 페이지는 이 URL이 아님.
         <EmptyState
           title="게시글이 없습니다."
           description="첫 글을 작성해보세요."
@@ -241,10 +242,10 @@ export default function Home() {
             <div className="text-muted small">최신 글을 한눈에 모아보세요.</div>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <Button as={Link} to="/posts/new" variant="primary" className="rounded-pill">
+            <Button as={Link} to="/posts/add" variant="primary" className="rounded-pill">
               글쓰기
             </Button>
-            <Button as={Link} to="/posts" variant="outline-secondary" className="rounded-pill">
+            <Button as={Link} to="/posts/all" variant="outline-secondary" className="rounded-pill">
               전체 글 보기
             </Button>
           </div>
