@@ -16,7 +16,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 @ExtendWith(MockitoExtension.class)
-class ViewCountServiceTest {
+class ReadCountRedisServiceTest {
 	private ReadCountRedisService readCountRedisService;
 	@Mock
 	private RedisTemplate<String, Boolean> keyCheckRedisTemplate;

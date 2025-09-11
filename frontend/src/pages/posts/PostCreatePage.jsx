@@ -67,11 +67,10 @@ const PostCreatePage = () => {
 
       const response = await axios.post('/api/posts', postData);
 
-      // 생성 후: 해당 카테고리 목록으로 이동
+      // 생성 후: 홈으로 이동
       // 서버가 생성된 게시글 id를 반환한다면 다음처럼 상세로 보내도 됨:
       // const createdId = response?.data?.id;
       // if (createdId) return navigate(`/posts/${createdId}`, { replace: true });
-
       navigate(`/`, { replace: true });
     } catch (error) {
       console.error('게시물 작성 중 오류 발생:', error);
@@ -87,7 +86,7 @@ const PostCreatePage = () => {
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h1 className="h4 m-0">게시물을 작성해보자!</h1>
-            <Button as={Link} to="/posts" variant="outline-secondary" size="sm" className="rounded-pill">
+            <Button onClick={() => navigate(-1)} variant="outline-secondary" size="sm" className="rounded-pill">
               목록으로
             </Button>
           </div>

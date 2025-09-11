@@ -122,6 +122,7 @@ public class PostMainPageControllerTest {
 			// 섹션 개수 = Category.values().length
 			.andExpect(jsonPath("$.sections.length()").value(Category.values().length))
 			// QUESTION 섹션이 존재하고 아이템이 최대 2개
+			// 최신순 정렬(createdAt DESC, id DESC)에 따라 Q2가 첫 번째로 나와야 함
 			.andExpect(jsonPath("$.sections[?(@.category=='question')]").isArray())
 			.andExpect(jsonPath("$.sections[?(@.category=='question')].items.length()").value(2))
 			// STUDY 섹션이 존재하고 아이템이 최대 2개

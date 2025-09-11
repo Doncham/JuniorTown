@@ -17,6 +17,7 @@ import {
 } from 'react-bootstrap';
 
 const GROUP_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 // 카테고리 메타 (라벨/아이콘/컬러)
 const CATEGORY_META = {
@@ -74,6 +75,7 @@ export default function PostListPage() {
   // 0-based 페이지
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // 정렬: latest, views, likes, comments
   const [sort, setSort] = useState('latest');
@@ -93,6 +95,7 @@ export default function PostListPage() {
         const response = await axios.get('/api/posts', {
           params: {
             page: page,           // 서버가 0-based 페이지 받는다고 가정
+            size: pageSize,      // 페이지 크기
             category: category,   // QUESTION 등 Enum 문자열
             sort: sort,           // 정렬 키 (백엔드와 합의)
           },
@@ -101,6 +104,9 @@ export default function PostListPage() {
 
         setPosts(response.data.content ?? []);
         setTotalPages(response.data.totalPages ?? 1);
+        if (typeof response.data.size === 'number' && response.data.size > 0) {
+          setPageSize(response.data.size);
+        }
       } catch (err) {
         if (axios.isCancel(err)) return;
         console.error('게시물 목록 조회 실패:', err);
@@ -279,7 +285,7 @@ export default function PostListPage() {
               <tbody>
                 {posts.map((post, index) => (
                   <tr key={post.id}>
-                    <td>{index + 1 + page * 10}</td>
+                    <td>{index + 1 + page * pageSize}</td>
                     <td
                       style={{ cursor: 'pointer', maxWidth: 560 }}
                       onClick={() => navigate(`/posts/${post.id}`)}

@@ -62,9 +62,9 @@ public class Post extends BaseTimeEntity {
 		this.deletedAt = LocalDateTime.now(clock);
 	}
 
-	public void update(PostEditRequest postEditRequest) {
-		this.title = postEditRequest.getTitle();
-		this.content = postEditRequest.getContent();
+	public void update(String title, String content) {
+		this.title = title;
+		this.content = content;
 	}
 
 	public void addReadCount(Long redisReadCount) {

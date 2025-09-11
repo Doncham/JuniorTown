@@ -159,7 +159,7 @@ class PostServiceTest {
 		postService.update(postId, userId, editRequest);
 
 		// then
-		verify(post).update(editRequest);
+		verify(post).update(editRequest.getTitle(), editRequest.getContent());
 	}
 
 	@Test

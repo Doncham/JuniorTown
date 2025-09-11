@@ -30,7 +30,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"WHERE p.deletedAt IS NULL and p.category = :category " +
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
-	Page<PostWithLikeCountProjection> findAllWithLikeCountForUser(@Param("userId") Long userId, Pageable pageable, Category category);
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForUser(@Param("userId") Long userId, Pageable pageable, @Param("category") Category category);
 
 	@Query(
 		"SELECT p.id AS id, p.title AS title, p.readCount AS readCount, u.name AS username, u.id AS userId, COUNT(l.id) AS likeCount, " +
@@ -41,7 +41,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"WHERE p.deletedAt IS NULL and p.category = :category " +
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
-	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable, Category category);
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable, @Param("category") Category category);
 
 	Page<Post> findByCategoryAndDeletedAtIsNull(Category category, Pageable pageable);
 

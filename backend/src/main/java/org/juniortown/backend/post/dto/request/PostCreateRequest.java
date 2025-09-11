@@ -31,7 +31,7 @@ public class PostCreateRequest {
 		return Post.builder()
 			.title(title)
 			.content(content)
-			.category(Category.valueOf(category))
+			.category(Category.from(category))
 			.user(user)
 			.build();
 	}

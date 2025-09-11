@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 	List<Comment> findByPostIdOrderByCreatedAtAsc(Long postId);
 
-	@Query("SELECT c.post.id AS postId, COUNT(c) AS cnt "
+	@Query("SELECT c.post.id AS postId, COUNT(c) AS count "
 		+ "FROM Comment c "
 		+ "WHERE c.post.id IN :postIds "
 		+ "GROUP BY c.post.id")

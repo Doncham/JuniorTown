@@ -154,7 +154,7 @@ function CategorySection({ category, items, loading }) {
           title="게시글이 없습니다."
           description="첫 글을 작성해보세요."
           ctaText="글쓰기"
-          to={`/posts/new?category=${category}`}
+          to={`/posts/add?category=${category}`}
         />
       ) : (
         <ListGroup variant="flush">

@@ -96,7 +96,7 @@ public class HomePageServiceTest {
 			@Override
 			public Long getPostId() { return postId; }
 			@Override
-			public Long getCnt() { return cnt; }
+			public Long getCount() { return cnt; }
 		};
 	}
 
@@ -135,8 +135,8 @@ public class HomePageServiceTest {
 
 		List<Long> allIds = List.of(101L, 102L, 201L, 202L);
 		when(readCountRedisService.getReadDeltaFromRedis(allIds)).thenReturn(Map.of(
-			"101", 1L,
-			"102", 2L
+			101L, 1L,
+			102L, 2L
 		));
 		when(commentRepository.countByPostIds(allIds))
 			.thenReturn(List.of(idCount(101, 7), idCount(201, 3)));

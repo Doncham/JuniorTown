@@ -61,7 +61,7 @@ public class ReadCountRedisService {
 		return readCount != null ? readCount : 0L;
 	}
 
-	public Map<String, Long> getReadDeltaFromRedis(List<Long> postIds) {
+	public Map<Long, Long> getReadDeltaFromRedis(List<Long> postIds) {
 		if(postIds == null || postIds.isEmpty()) return Map.of();
 
 		Collection<Object> postIdKeys = postIds.stream()
@@ -72,12 +72,19 @@ public class ReadCountRedisService {
 		List<Object> deltas = readCountRedisTemplate.opsForHash()
 			.multiGet(VIEW_COUNT_KEY, postIdKeys);
 
-		HashMap<String, Long> map = new HashMap<>();
+		HashMap<Long, Long> map = new HashMap<>(postIds.size());
 		for (int i = 0; i < postIds.size(); i++) {
 			// 여기서도 바로 (Long)으로 캐스팅 하면 위험한가?
 			Object readCountCache = deltas.get(i);
-			if(readCountCache == null) readCountCache = 0L;
-			map.put(String.valueOf(postIds.get(i)), (Long)readCountCache);
+			Long readCount = 0L;
+			if(readCountCache != null) {
+				if(readCountCache instanceof Long) {
+					readCount = (Long)readCountCache;
+				} else if(readCountCache instanceof Number) {
+					readCount = ((Number)readCountCache).longValue();
+				}
+			}
+			map.put(postIds.get(i), readCount);
 		}
 		return map;
 	}

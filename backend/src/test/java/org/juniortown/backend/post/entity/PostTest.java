@@ -41,7 +41,7 @@ class PostTest {
 
 
 		// when
-		post.update(editRequest);
+		post.update(editRequest.getTitle(), editRequest.getContent());
 
 		// then
 		assertEquals("Changed Title", post.getTitle());

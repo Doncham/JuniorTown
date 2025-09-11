@@ -19,6 +19,7 @@ import org.juniortown.backend.post.dto.request.PostCreateRequest;
 import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.post.dto.response.HomePageResponse;
 import org.juniortown.backend.post.dto.response.HomePageSection;
+import org.juniortown.backend.post.dto.response.IdCount;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
 import org.juniortown.backend.post.dto.response.PostForHomePage;
 import org.juniortown.backend.post.dto.response.PostResponse;
@@ -28,7 +29,6 @@ import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
 import org.juniortown.backend.post.exception.PostUpdatePermissionDeniedException;
-import org.juniortown.backend.post.dto.response.IdCount;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.entity.User;
 import org.juniortown.backend.user.exception.UserNotFoundException;
@@ -93,7 +93,7 @@ public class PostService {
 			throw new PostUpdatePermissionDeniedException();
 		}
 
-		post.update(postEditRequest);
+		post.update(postEditRequest.getTitle(), postEditRequest.getContent());
 		log.info("게시글 업데이트 성공: {}", post);
 		return PostResponse.from(post);
 	}
@@ -215,7 +215,7 @@ public class PostService {
 
 		// 조회된 게시글들의 좋아요 수, 댓글 수 일괄 조회
 		List<Long> postIds = collected.stream().map(Post::getId).toList();
-		Map<String, Long> readDeltaFromRedisMap = readCountRedisService.getReadDeltaFromRedis(postIds);
+		Map<Long, Long> readDeltaFromRedisMap = readCountRedisService.getReadDeltaFromRedis(postIds);
 		// 게시글이 하나도 없는 경우에 대한 방어 코드
 		if (postIds.isEmpty()) {
 			return HomePageResponse.builder()
@@ -225,9 +225,9 @@ public class PostService {
 		}
 
 		Map<Long,Long> commentMap = commentRepository.countByPostIds(postIds)
-			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCnt));
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCount));
 		Map<Long, Long> likeMap = likeRepository.countByPostIds(postIds)
-			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCnt));
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCount));
 
 		List<HomePageSection> sections = categories.stream()
 			.map(cat -> {
@@ -240,7 +240,7 @@ public class PostService {
 						.nickname(p.getUser().getName())
 						.likeCount(likeMap.getOrDefault(p.getId(), 0L))
 						.commentCount(commentMap.getOrDefault(p.getId(), 0L))
-						.readCount(p.getReadCount() + readDeltaFromRedisMap.getOrDefault(String.valueOf(p.getId()), 0L))
+						.readCount(p.getReadCount() + readDeltaFromRedisMap.getOrDefault(p.getId(), 0L))
 						.createdAt(p.getCreatedAt())
 						.build())
 					.toList();
