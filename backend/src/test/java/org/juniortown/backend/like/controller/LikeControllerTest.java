@@ -11,6 +11,7 @@ import org.juniortown.backend.config.TestClockConfig;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.exception.LikeFailureException;
 import org.juniortown.backend.like.repository.LikeRepository;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
 import org.juniortown.backend.user.dto.LoginDTO;
@@ -65,6 +66,7 @@ class LikeControllerTest {
 			.title("테스트 게시글")
 			.content("테스트 내용입니다.")
 			.user(testUser)
+			.category(Category.NOTICE)
 			.build());
 	}
 	@BeforeAll

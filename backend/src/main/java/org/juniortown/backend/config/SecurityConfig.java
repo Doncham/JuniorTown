@@ -7,6 +7,7 @@ import org.juniortown.backend.user.jwt.JWTUtil;
 import org.juniortown.backend.user.jwt.LoginFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -77,9 +78,9 @@ public class SecurityConfig {
 		//경로별 인가 작업
 		http
 			.authorizeHttpRequests((auth) -> auth
-				.requestMatchers("/api/auth/login", "/", "/api/auth/signup","/swagger-ui/**","/v3/api-docs/**",
-					"/api/posts/details/**", "/actuator/health","/actuator/prometheus").permitAll()
-				.requestMatchers(RegexRequestMatcher.regexMatcher("/api/posts/\\d+")).permitAll()
+				.requestMatchers("/api/auth/login", "/", "/api/auth/signup","/swagger-ui/**","/v3/api-docs/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/posts/details/**", "/api/posts", "/api/posts/home").permitAll()
+				.requestMatchers("/actuator/health","/actuator/prometheus").permitAll()
 				.requestMatchers("/admin").hasRole("ADMIN")
 				.anyRequest().authenticated());
 

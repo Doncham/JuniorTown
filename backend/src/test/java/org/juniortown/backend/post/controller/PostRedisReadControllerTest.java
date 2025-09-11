@@ -1,4 +1,4 @@
-package org.juniortown.backend.controller;
+package org.juniortown.backend.post.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
@@ -15,8 +15,10 @@ import org.juniortown.backend.comment.entity.Comment;
 import org.juniortown.backend.comment.repository.CommentRepository;
 import org.juniortown.backend.config.RedisTestConfig;
 import org.juniortown.backend.config.TestClockConfig;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.repository.PostRepository;
+import org.juniortown.backend.post.service.ReadCountRedisService;
 import org.juniortown.backend.post.service.ViewCountSyncService;
 import org.juniortown.backend.user.dto.LoginDTO;
 import org.juniortown.backend.user.entity.User;
@@ -127,6 +129,7 @@ public class PostRedisReadControllerTest {
 			.user(testUser)
 			.title("테스트 글")
 			.content("테스트 내용")
+			.category(Category.NOTICE)
 			.build();
 
 		testPost = postRepository.save(post);
@@ -329,8 +332,8 @@ public class PostRedisReadControllerTest {
 		// given
 		Long postId = testPost.getId();
 
-		String key = "post:viewCount:" + postId;
-		readCountRedisTemplate.opsForValue().set(key, 10L);
+		String key = ReadCountRedisService.VIEW_COUNT_KEY + postId;
+		readCountRedisTemplate.opsForHash().put(ReadCountRedisService.VIEW_COUNT_KEY, postId.toString(), 10L);
 
 		// when
 		viewCountSyncService.syncViewCounts();

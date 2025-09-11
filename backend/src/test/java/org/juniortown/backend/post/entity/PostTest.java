@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +34,14 @@ class PostTest {
 	void post_update_changesUpdatedAt() {
 		// given
 		Post post = Post.builder().title("T").content("C").build();
-		PostCreateRequest editRequest = PostCreateRequest.builder()
+		PostEditRequest editRequest = PostEditRequest.builder()
 			.title("Changed Title")
 			.content("Changed Content")
 			.build();
 
-		Clock fixedClock = Clock.fixed(
-			Instant.parse("2025-06-20T10:15:30Z"), ZoneOffset.UTC);
 
 		// when
-		post.update(editRequest, fixedClock);
+		post.update(editRequest.getTitle(), editRequest.getContent());
 
 		// then
 		assertEquals("Changed Title", post.getTitle());

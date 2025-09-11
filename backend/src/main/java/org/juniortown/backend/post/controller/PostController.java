@@ -1,15 +1,14 @@
 package org.juniortown.backend.post.controller;
 
-import java.util.stream.Collectors;
-
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
+import org.juniortown.backend.post.dto.response.HomePageResponse;
 import org.juniortown.backend.post.dto.response.PageResponse;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
-import org.juniortown.backend.post.dto.response.PostWithLikeCount;
 import org.juniortown.backend.post.dto.response.PostResponse;
-import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.service.PostService;
-import org.juniortown.backend.post.service.ViewCountService;
+import org.juniortown.backend.post.service.ReadCountRedisService;
 import org.juniortown.backend.user.dto.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 public class PostController {
 	private final PostService postService;
-	private final ViewCountService viewCountService;
+	private final ReadCountRedisService readCountRedisService;
 	@PostMapping("/posts")
 	public ResponseEntity<PostResponse> create(@AuthenticationPrincipal CustomUserDetails customUserDetails,
 		@Valid @RequestBody PostCreateRequest postCreateRequest) {
@@ -52,20 +52,22 @@ public class PostController {
 	}
 
 	@PatchMapping("/posts/{postId}")
-	public ResponseEntity<PostResponse> update(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId, @Valid @RequestBody PostCreateRequest postCreateRequest) {
+	public ResponseEntity<PostResponse> update(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long postId, @Valid @RequestBody PostEditRequest postEditRequest) {
 		Long userId = customUserDetails.getUserId();
-		PostResponse response = postService.update(postId, userId, postCreateRequest);
+		PostResponse response = postService.update(postId, userId, postEditRequest);
 		// 202가 뭐임?
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 
 	// 게시글 목록 조회, 페이지네이션 적용
-	@GetMapping("/posts/{page}")
+	@GetMapping("/posts")
 	public ResponseEntity<PageResponse<PostResponse>> getPosts(@AuthenticationPrincipal CustomUserDetails customUserDetails,
-		@PathVariable int page
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size,
+		@RequestParam(defaultValue = "NOTICE") Category category
 	) {
 		Long userId = (customUserDetails != null) ? customUserDetails.getUserId() : null;
-	 	Page<PostResponse> posts = postService.getPosts(userId, page);
+	 	Page<PostResponse> posts = postService.getPosts(userId, page, size, category);
 		PageResponse<PostResponse> response = new PageResponse<>(posts);
 		return ResponseEntity.ok(response);
 	}
@@ -78,6 +80,14 @@ public class PostController {
 		String viewerId = customUserDetails != null ? String.valueOf(customUserDetails.getUserId()) : guestId;
 		PostDetailResponse postDetailResponse = postService.getPost(postId, viewerId);
 		return ResponseEntity.ok(postDetailResponse);
+	}
+
+	@GetMapping("/posts/home")
+	public ResponseEntity<HomePageResponse> homePagePosts(
+		@RequestParam(defaultValue = "5") int perCategory
+	){
+		HomePageResponse homePageResponse = postService.homePagePosts(perCategory);
+		return ResponseEntity.ok(homePageResponse);
 	}
 
 }

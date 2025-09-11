@@ -1,12 +1,13 @@
 package org.juniortown.backend.post.service;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.juniortown.backend.comment.dto.response.CommentsInPost;
 import org.juniortown.backend.comment.entity.Comment;
@@ -15,9 +16,15 @@ import org.juniortown.backend.comment.service.CommentTreeBuilder;
 import org.juniortown.backend.like.entity.Like;
 import org.juniortown.backend.like.repository.LikeRepository;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
+import org.juniortown.backend.post.dto.response.HomePageResponse;
+import org.juniortown.backend.post.dto.response.HomePageSection;
+import org.juniortown.backend.post.dto.response.IdCount;
 import org.juniortown.backend.post.dto.response.PostDetailResponse;
+import org.juniortown.backend.post.dto.response.PostForHomePage;
 import org.juniortown.backend.post.dto.response.PostResponse;
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.juniortown.backend.post.exception.PostDeletePermissionDeniedException;
 import org.juniortown.backend.post.exception.PostNotFoundException;
@@ -46,11 +53,10 @@ public class PostService {
 	private final PostRepository postRepository;
 	private final UserRepository userRepository;
 	private final LikeRepository likeRepository;
-	private final ViewCountService viewCountService;
+	private final ReadCountRedisService readCountRedisService;
 	private final CommentRepository commentRepository;
 	private final Clock clock;
 	private final RedisTemplate<String, Long> redisTemplate;
-	private final static int PAGE_SIZE = 10;
 
 	@Transactional
 	public PostResponse create(Long userId, PostCreateRequest postCreateRequest) {
@@ -79,7 +85,7 @@ public class PostService {
 	}
 
 	@Transactional
-	public PostResponse update(Long postId, Long userId, PostCreateRequest postCreateRequest) {
+	public PostResponse update(Long postId, Long userId, PostEditRequest postEditRequest) {
 		Post post = postRepository.findById(postId)
 			.orElseThrow(() -> new PostNotFoundException());
 
@@ -87,17 +93,17 @@ public class PostService {
 			throw new PostUpdatePermissionDeniedException();
 		}
 
-		post.update(postCreateRequest, clock);
+		post.update(postEditRequest.getTitle(), postEditRequest.getContent());
 		log.info("게시글 업데이트 성공: {}", post);
 		return PostResponse.from(post);
 	}
 	@Transactional(readOnly = true)
-	public Page<PostResponse> getPosts(Long userId, int page) {
-		Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+	public Page<PostResponse> getPosts(Long userId, int page, int size, Category category) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 
 		Page<PostWithLikeCountProjection> postPage = (userId == null)
-			? postRepository.findAllWithLikeCountForNonUser(pageable)
-			: postRepository.findAllWithLikeCountForUser(userId, pageable);
+			? postRepository.findAllWithLikeCountForNonUser(pageable, category)
+			: postRepository.findAllWithLikeCountForUser(userId, pageable, category);
 
 		Map<Long,Long> redisReadCounts = getReadCountFromRedisCache(postPage);
 
@@ -126,7 +132,7 @@ public class PostService {
 		if(ids.isEmpty()) return Map.of();
 
 		List<String> keys = ids.stream()
-			.map(id -> ViewCountService.VIEW_COUNT_KEY + id)
+			.map(id -> ReadCountRedisService.VIEW_COUNT_KEY + id)
 			.toList();
 		try {
 			List<Long> readCounts = redisTemplate.opsForValue().multiGet(keys);
@@ -157,7 +163,7 @@ public class PostService {
 			like = likeRepository.findByUserIdAndPostId(Long.valueOf(viewerId), post.getId());
 		}
 		Long likeCount = likeRepository.countByPostId(postId);
-		Long redisReadCount = viewCountService.readCountUp(viewerId, postId.toString());
+		Long redisReadCount = readCountRedisService.readCountUp(viewerId, postId.toString());
 
 		// 댓글 조회 로직
 		List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
@@ -186,5 +192,68 @@ public class PostService {
 		} catch (NumberFormatException e) {
 			return false;
 		}
+	}
+
+	@Transactional(readOnly = true)
+	public HomePageResponse homePagePosts(int perCategory) {
+		List<Category> categories = List.of(Category.values());
+		Map<Category, List<Post>> byCategory = new HashMap<>();
+		// postId를 담기 위한 리스트
+		List<Post> collected = new ArrayList<>();
+
+		PageRequest categoryPageRequest = PageRequest.of(0, perCategory,
+			Sort.by(Sort.Order.desc("createdAt"),
+				Sort.Order.desc("id")));
+
+		// 5개의 카테고리별로 최신 게시글 5개씩 조회
+		for (Category category : categories) {
+			List<Post> posts = postRepository.findByCategoryAndDeletedAtIsNull(category, categoryPageRequest)
+				.getContent();
+			byCategory.put(category, posts);
+			collected.addAll(posts);
+		}
+
+		// 조회된 게시글들의 좋아요 수, 댓글 수 일괄 조회
+		List<Long> postIds = collected.stream().map(Post::getId).toList();
+		Map<Long, Long> readDeltaFromRedisMap = readCountRedisService.getReadDeltaFromRedis(postIds);
+		// 게시글이 하나도 없는 경우에 대한 방어 코드
+		if (postIds.isEmpty()) {
+			return HomePageResponse.builder()
+				.sections(List.of())
+				.createdAt(LocalDateTime.now())
+				.build();
+		}
+
+		Map<Long,Long> commentMap = commentRepository.countByPostIds(postIds)
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCount));
+		Map<Long, Long> likeMap = likeRepository.countByPostIds(postIds)
+			.stream().collect(Collectors.toMap(IdCount::getPostId, IdCount::getCount));
+
+		List<HomePageSection> sections = categories.stream()
+			.map(cat -> {
+				List<PostForHomePage> items = byCategory.getOrDefault(cat, List.of())
+					.stream()
+					.map(p -> PostForHomePage.builder()
+						.postId(p.getId())
+						.title(p.getTitle())
+						.userId(p.getUser().getId())
+						.nickname(p.getUser().getName())
+						.likeCount(likeMap.getOrDefault(p.getId(), 0L))
+						.commentCount(commentMap.getOrDefault(p.getId(), 0L))
+						.readCount(p.getReadCount() + readDeltaFromRedisMap.getOrDefault(p.getId(), 0L))
+						.createdAt(p.getCreatedAt())
+						.build())
+					.toList();
+				return HomePageSection.builder()
+					.category(cat.name().toLowerCase())
+					.items(items)
+					.build();
+			})
+			.toList();
+
+		return HomePageResponse.builder()
+			.sections(sections)
+			.createdAt(LocalDateTime.now())
+			.build();
 	}
 }

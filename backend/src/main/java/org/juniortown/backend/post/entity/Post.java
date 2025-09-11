@@ -6,10 +6,13 @@ import java.time.LocalDateTime;
 
 import org.juniortown.backend.entity.BaseTimeEntity;
 import org.juniortown.backend.post.dto.request.PostCreateRequest;
+import org.juniortown.backend.post.dto.request.PostEditRequest;
 import org.juniortown.backend.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,20 +46,25 @@ public class Post extends BaseTimeEntity {
 	@Column(name = "read_count", nullable = false)
 	private Long readCount = 0L;
 
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private Category category;
+
 	@Builder
-	public Post(String title, String content, User user) {
+	public Post(String title, String content, User user, Category category) {
 		this.title = title;
 		this.content = content;
 		this.user = user;
+		this.category = category;
 	}
 
 	public void softDelete(Clock clock) {
 		this.deletedAt = LocalDateTime.now(clock);
 	}
 
-	public void update(PostCreateRequest postCreateRequest, Clock clock) {
-		this.title = postCreateRequest.getTitle();
-		this.content = postCreateRequest.getContent();
+	public void update(String title, String content) {
+		this.title = title;
+		this.content = content;
 	}
 
 	public void addReadCount(Long redisReadCount) {

@@ -1,6 +1,9 @@
 package org.juniortown.backend.post.repository;
 
+import java.util.List;
+
 import org.juniortown.backend.post.dto.response.PostWithLikeCountProjection;
+import org.juniortown.backend.post.entity.Category;
 import org.juniortown.backend.post.entity.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,10 +27,10 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"FROM Post p " +
 			"JOIN p.user u " +
 			"LEFT JOIN Like l ON l.post.id = p.id " +
-			"WHERE p.deletedAt IS NULL " +
+			"WHERE p.deletedAt IS NULL and p.category = :category " +
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
-	Page<PostWithLikeCountProjection> findAllWithLikeCountForUser(@Param("userId") Long userId, Pageable pageable);
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForUser(@Param("userId") Long userId, Pageable pageable, @Param("category") Category category);
 
 	@Query(
 		"SELECT p.id AS id, p.title AS title, p.readCount AS readCount, u.name AS username, u.id AS userId, COUNT(l.id) AS likeCount, " +
@@ -35,8 +38,11 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
 			"FROM Post p " +
 			"JOIN p.user u " +
 			"LEFT JOIN Like l ON l.post.id = p.id " +
-			"WHERE p.deletedAt IS NULL " +
+			"WHERE p.deletedAt IS NULL and p.category = :category " +
 			"GROUP BY p.id, p.title, p.readCount, u.name, u.id, p.createdAt, p.updatedAt, p.deletedAt"
 	)
-	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable);
+	Page<PostWithLikeCountProjection> findAllWithLikeCountForNonUser(Pageable pageable, @Param("category") Category category);
+
+	Page<Post> findByCategoryAndDeletedAtIsNull(Category category, Pageable pageable);
+
 }

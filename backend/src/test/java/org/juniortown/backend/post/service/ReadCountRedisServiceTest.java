@@ -11,12 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 @ExtendWith(MockitoExtension.class)
-class ViewCountServiceTest {
-	private ViewCountService viewCountService;
+class ReadCountRedisServiceTest {
+	private ReadCountRedisService readCountRedisService;
 	@Mock
 	private RedisTemplate<String, Boolean> keyCheckRedisTemplate;
 	@Mock
@@ -24,11 +25,11 @@ class ViewCountServiceTest {
 	@Mock
 	private RedisTemplate<String, Long> readCountRedisTemplate;
 	@Mock
-	private ValueOperations<String, Long> readCountValueOperations;
+	private HashOperations<String, String, Long> readCountValueOperations;
 
 	@BeforeEach
 	public void setUp() {
-		viewCountService = new ViewCountService(keyCheckRedisTemplate, readCountRedisTemplate);
+		readCountRedisService = new ReadCountRedisService(keyCheckRedisTemplate, readCountRedisTemplate);
 	}
 
 	@Test
@@ -38,19 +39,19 @@ class ViewCountServiceTest {
 		String userId = "1";
 		String postId = "1";
 		String dupKey = "postDup:key:" + postId + ":" + userId;
-		String readCountKey = "post:viewCount:" + postId;
+		String readCountKey = ReadCountRedisService.VIEW_COUNT_KEY;
 
 		when(keyCheckRedisTemplate.opsForValue()).thenReturn(keyCheckValueOperations);
-		when(readCountRedisTemplate.opsForValue()).thenReturn(readCountValueOperations);
+		when(readCountRedisTemplate.<String, Long>opsForHash()).thenReturn(readCountValueOperations);
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(null);
-		when(readCountValueOperations.get(readCountKey)).thenReturn(1L);
+		when(readCountValueOperations.get(readCountKey, postId)).thenReturn(1L);
 		// when
-		Long result = viewCountService.readCountUp(userId, postId);
+		Long result = readCountRedisService.readCountUp(userId, postId);
 
 		// then
 		Assertions.assertEquals(1L, result);
 		verify(keyCheckValueOperations).set(eq(dupKey), eq(true), eq(10L), eq(TimeUnit.MINUTES));
-		verify(readCountRedisTemplate.opsForValue()).increment(readCountKey);
+		verify(readCountRedisTemplate.opsForHash()).increment(readCountKey, postId, 1);
 	}
 
 	@Test
@@ -60,19 +61,19 @@ class ViewCountServiceTest {
 		String userId = "1";
 		String postId = "1";
 		String dupKey = "postDup:key:" + postId + ":" + userId;
-		String readCountKey = "post:viewCount:" + postId;
+		String readCountKey = ReadCountRedisService.VIEW_COUNT_KEY;
 
 		when(keyCheckRedisTemplate.opsForValue()).thenReturn(keyCheckValueOperations);
-		when(readCountRedisTemplate.opsForValue()).thenReturn(readCountValueOperations);
+		when(readCountRedisTemplate.<String,Long>opsForHash()).thenReturn(readCountValueOperations);
 		when(keyCheckValueOperations.get(dupKey)).thenReturn(true);
-		when(readCountValueOperations.get(readCountKey)).thenReturn(0L);
+		when(readCountValueOperations.get(readCountKey, postId)).thenReturn(0L);
 		// when
-		Long result = viewCountService.readCountUp(userId, postId);
+		Long result = readCountRedisService.readCountUp(userId, postId);
 
 		// then
 		Assertions.assertEquals(0L, result);
 		verify(keyCheckValueOperations, never()).set(eq(dupKey), eq(true), eq(10L), eq(TimeUnit.MINUTES));
-		verify(readCountValueOperations, never()).increment(readCountKey);
-		verify(readCountRedisTemplate.opsForValue()).get(readCountKey);
+		verify(readCountValueOperations, never()).increment(readCountKey, postId,1);
+		verify(readCountRedisTemplate.opsForHash()).get(readCountKey, postId);
 	}
 }
